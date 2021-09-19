@@ -53,7 +53,7 @@ contract Market {
     event PurchaseRequested(listings list, address indexed buyer);
     /// @dev this event is for when seller confirms item purchase by buyer
     /// @dev the hash of the item string is added the block chain from where the buyer can retrieve and decrypt
-    event encryptedKey(uint256 indexed listing_id, string indexed H);
+    event encryptedKey(uint256 indexed listing_id, string H);
     /// event emitted when the a item is bought and both the seller and buyer gets the money/item
     event PurchaseComplete(listings list);
 
@@ -174,6 +174,11 @@ contract Market {
           "This is not your listing you cant sell this "
         );
         // check whether the caller is the seller
+        require(
+          msg.value = 2*Listings[listing_id].price,
+          "You have not paid the security deposit"
+        );
+        // Check the security deposits
         //Listings[listing_id].sold_or_withdrawn = true;
 
         emit encryptedKey(listing_id, H);
