@@ -5,8 +5,6 @@ pragma experimental ABIEncoderV2;
 contract Market {
     uint256 current_listing_id = 0;
     uint256 public activelistings = 0;
-    address payable cur_seller;
-    address payable cur_buyer;
     
     // structure for each listings
     /// @dev uint is the unique listing id
@@ -28,7 +26,6 @@ contract Market {
         bool buyer_alloted;
         State state;
         uint status;
-        //address owner
     }
 
     // structure for each sale
@@ -84,33 +81,56 @@ contract Market {
         require(_condition);
         _;
     }
-    // Only the buyer can call this function.
-    error OnlyBuyer();
-    // Only the seller can call this function.
-    error OnlySeller();
-    // Check invalid state of listing
-    error InvalidState();
-    
-    modifier onlyBuyer() {
-        if (msg.sender != cur_buyer)
-            revert OnlyBuyer();
-        _;
+  
+    modifier ValidBuyer(uint256 listing_id) {
+      require(
+        Listings[listing_id].seller != msg.sender,
+        "Invalid Buyer"
+      );
+      _;
     }
 
-    modifier onlySeller() {
-        if (msg.sender != cur_seller)
-            revert OnlySeller();
-        _;
+    modifier ValidSeller(uint256 listing_id) {
+      require(
+        Listings[listing_id].buyer != msg.sender,
+        "Invalid Seller"
+      );
+      _;
     }
-    modifier inState(State _state, uint256 listing_id) {
-        if (_state != Listings[listing_id].state)
-            revert InvalidState();
-        _;
+
+    modifier SufficientBalance(uint256 listing_id) {
+      uint256 balance = getAccountBalance(msg.sender);
+      require(
+        balance >= msg.value,
+        "Insuficient Balance for transaction"
+      );
+      _;
+    }
+
+    modifier CheckState(uint256 listing_id) {
+      require(
+        !Listings[listing_id].sold_or_withdrawn,
+        "Item has already been bought / withdrawn"
+      );
+      _;
+    }
+
+    modifier ValidListing(uint256 listing_id) {
+      require(
+          listing_id < current_listing_id && listing_id >= 0,
+          "Invalid Listing Id"
+      );
+      _;
     }
    
     // function randomKeyGenerator() pure returns (string) {
     //     return string(keccak256(abi.encodePacked(now)));
     // }
+    
+    function getAccountBalance(address account) public view returns(uint accountBalance)
+    {
+        accountBalance = account.balance;
+    }
 
     //create a listing for sale in the market place
     function createListings(
@@ -119,17 +139,15 @@ contract Market {
         string calldata item_description
     ) 
     external payable 
-    onlySeller
     condition(price>0)
     {
-        // require(price > 0, "Price cannot be 0 wei");
         uint256 listing_id = current_listing_id;
         current_listing_id += 1;
         activelistings += 1;
 
         Listings[listing_id] = listings(
             listing_id,
-            payable(msg.sender),
+            msg.sender,
             address(0),
             price,
             item_name,
@@ -167,103 +185,76 @@ contract Market {
         return active_list;
     }
 
-    //request from buyer to seller for item's purchase
-    // the contract emits a event to let the seller know that an buyer has been found
+    /// Request from buyer to seller for item's purchase
+    /// the contract emits a event to let the seller know that an buyer has been found
     /// @dev listing id is the id of the item buyer is interested in
-    function requestBuy(uint256 listing_id) external payable {
-        require(
-            listing_id < current_listing_id && listing_id >= 0,
-            "Listing id is invalid"
-        ); // Check for valid listing id
-        require(
-            !Listings[listing_id].sold_or_withdrawn,
-            "The item has already been bought"
-        ); // Check if the item is still available
+    function requestBuy(uint256 listing_id) external payable 
+    ValidBuyer(listing_id)
+    ValidListing(listing_id)
+    CheckState(listing_id)
+    SufficientBalance(listing_id)
+    {
+        /// Check whether item has a buyer already
         require(
           !Listings[listing_id].buyer_alloted,
           "the item already has a buyer,in midst of transaction"
-        ); // Check whether item has a buyer already
+        ); 
+        /// Check whether you have provided 2 times the selling price,for security purposes
         require(
           msg.value == 2*Listings[listing_id].price,
           "The required deposit for the purchase not given "
-        );// check whether you have provided 2 times the selling price,for security purposes
-        require(
-          msg.sender != Listings[listing_id].seller,
-          "You cant buy your own items "
         );
-        //Check that the seller is not the buyer
 
-        // let the seller know you have found a buyer
+        /// Let the seller know you have found a buyer
         Listings[listing_id].buyer = msg.sender;
         Listings[listing_id].buyer_alloted = true;
         emit PurchaseRequested(Listings[listing_id], msg.sender);
     }
 
-    //Sale of item from seller's side
-    // transaction from the seller 
+    /// Sale of item from seller's side
+    /// Transaction from the seller 
     /// @dev listing id is the id of the item being sold_
     /// @dev H is the hashed key for the item string (Hashed using the public key of the buyer off-chain)
-    function sellItem(uint256 listing_id,string calldata  H) external payable {
-        require(
-            listing_id < current_listing_id && listing_id >= 0,
-            "Listing id is invalid"
-        ); // Check for valid listing id
-        require(
-            !Listings[listing_id].sold_or_withdrawn,
-            "The item has already been bought"
-        ); // Check if the item is still available
-        require(
-          msg.sender == Listings[listing_id].seller,
-          "This is not your listing you cant sell this "
-        );
-        // check whether the caller is the seller
+    function sellItem(uint256 listing_id,string calldata  H) external payable 
+    ValidListing(listing_id)
+    ValidSeller(listing_id)
+    CheckState(listing_id)
+    {
+        /// Check the security deposits
         require(
           msg.value == 2*Listings[listing_id].price,
           "You have not paid the security deposit"
         );
-        // Check the security deposits
-        //Listings[listing_id].sold_or_withdrawn = true;
-
+        /// Listings[listing_id].sold_or_withdrawn = true;
         emit encryptedKey(listing_id, H);
     }
 
-    //Confirmation from buyer on receiving item
-    // the buyer confirms to get the refund of the money owed.(price)
-    // the seller gets his amount + price (3 * price)
+    /// Confirmation from buyer on receiving item
+    /// the buyer confirms to get the refund of the money owed.(price)
+    /// the seller gets his amount + price (3 * price)
     /// @dev the listing id is the item being exchanged
-    function confirmDelivery(uint256 listing_id) external payable {
-    require(
-            listing_id < current_listing_id && listing_id >= 0,
-            "Listing id is invalid"
-        ); // Check for valid listing id
-        require(
-            !Listings[listing_id].sold_or_withdrawn,
-            "The item has already been bought"
-        ); // Check if the item is still available
-        require(
-          msg.sender == Listings[listing_id].buyer,
-          "You are not the buyer for this item "
-        );
-        // check whether buyer is the messenger
-        //refund the seller
+    function confirmDelivery(uint256 listing_id) external payable 
+    ValidListing(listing_id)
+    ValidBuyer(listing_id)
+    CheckState(listing_id)
+    {
+        /// Refund the seller
         Listings[listing_id].sold_or_withdrawn = true;
         Listings[listing_id].seller.transfer(3*Listings[listing_id].price);
-        // refund the buyer
+        /// Refund the buyer
         Listings[listing_id].buyer.transfer(Listings[listing_id].price);
         emit ListingChanged(Listings[listing_id].seller, listing_id);
         emit PurchaseComplete(Listings[listing_id]);
     }
 
-    // Abort the purchase and reclaim the ether.
-    // Can only be called by the seller before
+    /// Abort the purchase and reclaim the ether.
     function abort(uint256 listing_id)
     public
-    onlySeller
-    inState(State.Created, listing_id)
+    CheckState(listing_id)
     {
         emit Aborted();
         Listings[listing_id].state = State.Inactive;
-        // We use transfer here directly and it is reentrancy-safe
+        activelistings--;
         Listings[listing_id].seller.transfer(address(this).balance);
     }
 }
