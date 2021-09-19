@@ -22,7 +22,9 @@ contract Market {
         uint256 price;
         string item_name;
         string item_description;
-        uint16 status;
+        bool sold_or_withdrawn;
+        State state;
+        uint status;
         //address owner
     }
 
@@ -67,6 +69,22 @@ contract Market {
     // create a listing for all possible listing id and make it private
     // mapping(uint256 => sales) private Sales;
 
+    enum State {Created, Active, Sold, Delivered, Withdrawn}
+    State public state;
+
+    modifier condition(bool _condition) {
+        require(_condition);
+        _;
+    }
+
+    error InvalidState();
+
+    modifier inState(State _state, uint256 listing_id) {
+        if (_state != Listings[listing_id].state)
+            revert InvalidState();
+        _;
+    }
+   
     // function randomKeyGenerator() pure returns (string) {
     //     return string(keccak256(abi.encodePacked(now)));
     // }
@@ -76,7 +94,9 @@ contract Market {
         uint256 price,
         string calldata item_name,
         string calldata item_description
-    ) external payable {
+    ) 
+    external payable 
+    {
         require(price > 0, "Price cannot be 0 wei");
 
         uint256 listing_id = current_listing_id;
@@ -91,6 +111,8 @@ contract Market {
             price,
             item_name,
             item_description,
+            false,
+            State.Active,
             0
         );
         // emit the update
@@ -121,7 +143,9 @@ contract Market {
     }
 
     //request from buyer to seller for item's purchase
-    function requestBuy(uint256 listing_id) external payable {
+    function requestBuy(uint256 listing_id) external payable 
+    inState(State.Active, listing_id)
+    {
         require(
             listing_id < current_listing_id && listing_id >= 0,
             "Listing id is invalid"
@@ -131,7 +155,9 @@ contract Market {
     }
 
     //Sale of item from seller's side
-    function sellItem(uint256 listing_id, bytes32 H) external payable {
+    function sellItem(uint256 listing_id, bytes32 H) external payable 
+    inState(State.Sold, listing_id)
+    {
         require(
             listing_id < current_listing_id && listing_id >= 0,
             "Listing id is invalid"
@@ -143,7 +169,9 @@ contract Market {
     }
 
     //Confirmation from buyer on receiving item
-    function confirmDelivery(uint256 listing_id) external payable {
+    function confirmDelivery(uint256 listing_id) external payable 
+    inState(State.Delivered, listing_id)
+    {
         Listings[listing_id].status = 2;
         Listings[listing_id].buyer = payable(msg.sender);
         emit ListingChanged(Listings[listing_id].seller, listing_id);
