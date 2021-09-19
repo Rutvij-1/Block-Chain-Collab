@@ -3,26 +3,28 @@ pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 contract Market {
-    uint256 current_listing_id=0;
-    uint256 public activelistings=0;
+    uint256 current_listing_id = 0;
+    uint256 public activelistings = 0;
 
     // structure for each listings
     /// @dev uint is the unique listing id
     /// @dev seller stores the seller address
+    /// @dev buyer stores the buyer address
     /// @dev price is the price of the item
     /// @dev item_name is the name of the item
     /// @dev item_description has the description of the item
-    /// @dev sold indicates whether the item is already sold or not
+    /// @dev status indicates whether the item is already sold(2), purchased and yet to be delivered (1) or available (0)
 
     struct listings {
         uint256 listing_id;
         address payable seller;
+        address payable buyer;
         uint256 price;
         string item_name;
         string item_description;
         bool sold_or_withdrawn;
-        address payable buyer;
         State state;
+        uint status;
         //address owner
     }
 
@@ -101,15 +103,17 @@ contract Market {
         current_listing_id += 1;
         activelistings += 1;
 
+        address payable buyer_address;
         Listings[listing_id] = listings(
             listing_id,
-            msg.sender,
+            payable(msg.sender),
+            buyer_address,
             price,
             item_name,
             item_description,
             false,
-            msg.sender,
-            State.Active
+            State.Active,
+            0
         );
         // emit the update
         emit ListingCreated(
@@ -129,7 +133,7 @@ contract Market {
         listings[] memory active_list = new listings[](activelistings);
         for (uint256 i = 0; i < current_listing_id; i++) {
             // only consider listings which are unsold/not withdrawn
-            if (Listings[i].sold_or_withdrawn == false) {
+            if (Listings[i].status == 0) {
                 listings storage currentlisting = Listings[i];
                 active_list[currentIndex] = currentlisting;
                 currentIndex += 1;
@@ -146,10 +150,7 @@ contract Market {
             listing_id < current_listing_id && listing_id >= 0,
             "Listing id is invalid"
         ); // Check for valid listing id
-        require(
-            !Listings[listing_id].sold_or_withdrawn,
-            "The item has already been bought"
-        ); // Check if the item is still available
+        require(Listings[listing_id].status == 0, "The item is not available"); // Check if the item is still available
         emit PurchaseRequested(listing_id, msg.sender);
     }
 
@@ -161,16 +162,18 @@ contract Market {
             listing_id < current_listing_id && listing_id >= 0,
             "Listing id is invalid"
         ); // Check for valid listing id
-        require(
-            !Listings[listing_id].sold_or_withdrawn,
-            "The item has already been bought"
-        ); // Check if the item is still available
-        Listings[listing_id].sold_or_withdrawn = true;
+        require(Listings[listing_id].status == 0, "The item is not available"); // Check if the item is still available
+        Listings[listing_id].status = 1;
+        emit ListingChanged(Listings[listing_id].seller, listing_id);
         emit encryptedKey(listing_id, H);
     }
 
     //Confirmation from buyer on receiving item
     function confirmDelivery(uint256 listing_id) external payable 
     inState(State.Delivered, listing_id)
-    {}
+    {
+        Listings[listing_id].status = 2;
+        Listings[listing_id].buyer = payable(msg.sender);
+        emit ListingChanged(Listings[listing_id].seller, listing_id);
+    }
 }
