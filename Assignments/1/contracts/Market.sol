@@ -5,24 +5,29 @@ pragma experimental ABIEncoderV2;
 contract Market {
     uint256 current_listing_id = 0;
     uint256 public activelistings = 0;
-
+    address payable cur_seller;
+    address payable cur_buyer;
+    
     // structure for each listings
     /// @dev uint is the unique listing id
     /// @dev seller stores the seller address
+    /// @dev buyer stores the buyer address
     /// @dev price is the price of the item
     /// @dev item_name is the name of the item
     /// @dev item_description has the description of the item
-    /// @dev sold indicates whether the item is already sold or not
+    /// @dev status indicates whether the item is already sold(2), purchased and yet to be delivered (1) or available (0)
 
     struct listings {
         uint256 listing_id;
         address payable seller;
+        address payable buyer;
         uint256 price;
         string item_name;
         string item_description;
         bool sold_or_withdrawn;
         bool buyer_alloted;
-        address payable buyer;
+        State state;
+        uint status;
         //address owner
     }
 
@@ -56,6 +61,8 @@ contract Market {
     event encryptedKey(uint256 indexed listing_id, string H);
     /// event emitted when the a item is bought and both the seller and buyer gets the money/item
     event PurchaseComplete(listings list);
+    /// @dev this event is for when transaction is aborted
+    event Aborted();
 
     /// @dev this event is emitted when a sale is initiated
     // event SaleCreated(
@@ -70,6 +77,37 @@ contract Market {
     // create a listing for all possible listing id and make it private
     // mapping(uint256 => sales) private Sales;
 
+    enum State {Created, Active, Sold, Delivered, Inactive}
+    State public state;
+
+    modifier condition(bool _condition) {
+        require(_condition);
+        _;
+    }
+    // Only the buyer can call this function.
+    error OnlyBuyer();
+    // Only the seller can call this function.
+    error OnlySeller();
+    // Check invalid state of listing
+    error InvalidState();
+    
+    modifier onlyBuyer() {
+        if (msg.sender != cur_buyer)
+            revert OnlyBuyer();
+        _;
+    }
+
+    modifier onlySeller() {
+        if (msg.sender != cur_seller)
+            revert OnlySeller();
+        _;
+    }
+    modifier inState(State _state, uint256 listing_id) {
+        if (_state != Listings[listing_id].state)
+            revert InvalidState();
+        _;
+    }
+   
     // function randomKeyGenerator() pure returns (string) {
     //     return string(keccak256(abi.encodePacked(now)));
     // }
@@ -79,22 +117,27 @@ contract Market {
         uint256 price,
         string calldata item_name,
         string calldata item_description
-    ) external payable {
-        require(price > 0, "Price cannot be 0 wei");
-
+    ) 
+    external payable 
+    onlySeller
+    condition(price>0)
+    {
+        // require(price > 0, "Price cannot be 0 wei");
         uint256 listing_id = current_listing_id;
         current_listing_id += 1;
         activelistings += 1;
 
         Listings[listing_id] = listings(
             listing_id,
-            msg.sender,
+            payable(msg.sender),
+            address(0),
             price,
             item_name,
             item_description,
             false, 
             false,
-            address(0)
+            State.Active,
+            0
         );
         // emit the update
         emit ListingCreated(
@@ -115,7 +158,7 @@ contract Market {
         listings[] memory active_list = new listings[](activelistings);
         for (uint256 i = 0; i < current_listing_id; i++) {
             // only consider listings which are unsold/not withdrawn
-            if (Listings[i].sold_or_withdrawn == false) {
+            if (Listings[i].status == 0) {
                 listings storage currentlisting = Listings[i];
                 active_list[currentIndex] = currentlisting;
                 currentIndex += 1;
@@ -175,7 +218,7 @@ contract Market {
         );
         // check whether the caller is the seller
         require(
-          msg.value = 2*Listings[listing_id].price,
+          msg.value == 2*Listings[listing_id].price,
           "You have not paid the security deposit"
         );
         // Check the security deposits
@@ -207,8 +250,20 @@ contract Market {
         Listings[listing_id].seller.transfer(3*Listings[listing_id].price);
         // refund the buyer
         Listings[listing_id].buyer.transfer(Listings[listing_id].price);
+        emit ListingChanged(Listings[listing_id].seller, listing_id);
         emit PurchaseComplete(Listings[listing_id]);
+    }
 
-
+    // Abort the purchase and reclaim the ether.
+    // Can only be called by the seller before
+    function abort(uint256 listing_id)
+    public
+    onlySeller
+    inState(State.Created, listing_id)
+    {
+        emit Aborted();
+        Listings[listing_id].state = State.Inactive;
+        // We use transfer here directly and it is reentrancy-safe
+        Listings[listing_id].seller.transfer(address(this).balance);
     }
 }
