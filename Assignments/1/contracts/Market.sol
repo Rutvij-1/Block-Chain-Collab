@@ -27,15 +27,8 @@ contract Market{
         //address owner
 
     }
-    struct displayed_listings {
-
-        uint256 listing_id;
-        address payable seller;
-        uint256 price;
-        string item_name;
-        string item_description;
-    }
-
+    
+    /// @dev this event is emitted when a listing is created 
     event ListingCreated (
     uint indexed listing_id,
     address seller,
@@ -43,7 +36,7 @@ contract Market{
     string item_name,
     string item_description
   );
-    
+    /// @dev this event is for when listing is modified ,item sold or withdrawn
     event ListingChanged(address indexed seller, uint256 indexed index);
 
     // create a listing for all possible listing id and make it private
@@ -71,6 +64,8 @@ contract Market{
       false
       
     );
+    // emit the update
+    emit ListingCreated(listing_id,msg.sender,price,item_name,item_description);
     emit ListingChanged(msg.sender, activelistings);
   }
 
@@ -81,6 +76,7 @@ contract Market{
 
     listings[] memory active_list = new listings[](activelistings);
     for (uint256 i = 0; i < current_id; i++) {
+        // only consider listings which are unsold/not withdrawn
       if (Listings[i].sold_or_withdrawn == false)  {
         
         listings storage currentlisting = Listings[i];
