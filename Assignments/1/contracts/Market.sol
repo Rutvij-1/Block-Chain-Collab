@@ -5,7 +5,13 @@ pragma experimental ABIEncoderV2;
 contract Market {
     uint256 current_listing_id = 0;
     uint256 public activelistings = 0;
+<<<<<<< HEAD
     
+=======
+    address payable cur_seller;
+    address payable cur_buyer;
+
+>>>>>>> c97aace2edd9cbb1f74f0b155b4562b74bbeb368
     // structure for each listings
     /// @dev uint is the unique listing id
     /// @dev seller stores the seller address
@@ -13,7 +19,6 @@ contract Market {
     /// @dev price is the price of the item
     /// @dev item_name is the name of the item
     /// @dev item_description has the description of the item
-    /// @dev status indicates whether the item is already sold(2), purchased and yet to be delivered (1) or available (0)
 
     struct listings {
         uint256 listing_id;
@@ -25,21 +30,7 @@ contract Market {
         bool sold_or_withdrawn;
         bool buyer_alloted;
         State state;
-        uint status;
     }
-
-    // structure for each sale
-    /// @dev uint is the unique listing id of the item
-    /// @dev seller stores the seller address
-    /// @dev buyer stores the buyer address
-    /// @dev secret_key is the unique string authorising the sale
-
-    // struct sales {
-    //     uint256 listing_id;
-    //     address payable seller;
-    //     address payable buyer;
-    //     string secret_key;
-    // }
 
     /// @dev this event is emitted when a listing is created
     event ListingCreated(
@@ -61,20 +52,16 @@ contract Market {
     /// @dev this event is for when transaction is aborted
     event Aborted();
 
-    /// @dev this event is emitted when a sale is initiated
-    // event SaleCreated(
-    //     uint256 indexed listing_id,
-    //     address indexed seller,
-    //     address indexed buyer
-    // );
-
     // create a listing for all possible listing id and make it private
     mapping(uint256 => listings) private Listings;
 
-    // create a listing for all possible listing id and make it private
-    // mapping(uint256 => sales) private Sales;
-
-    enum State {Created, Active, Sold, Delivered, Inactive}
+    enum State {
+        Created,
+        Active,
+        Sold,
+        Delivered,
+        Inactive
+    }
     State public state;
 
     modifier condition(bool _condition) {
@@ -133,6 +120,7 @@ contract Market {
     }
 
     //create a listing for sale in the market place
+    //onlySeller
     function createListings(
         uint256 price,
         string calldata item_name,
@@ -152,10 +140,9 @@ contract Market {
             price,
             item_name,
             item_description,
-            false, 
             false,
-            State.Active,
-            0
+            false,
+            State.Active
         );
         // emit the update
         emit ListingCreated(
@@ -176,7 +163,7 @@ contract Market {
         listings[] memory active_list = new listings[](activelistings);
         for (uint256 i = 0; i < current_listing_id; i++) {
             // only consider listings which are unsold/not withdrawn
-            if (Listings[i].status == 0) {
+            if (Listings[i].sold_or_withdrawn == false) {
                 listings storage currentlisting = Listings[i];
                 active_list[currentIndex] = currentlisting;
                 currentIndex += 1;
@@ -222,10 +209,12 @@ contract Market {
     {
         /// Check the security deposits
         require(
-          msg.value == 2*Listings[listing_id].price,
-          "You have not paid the security deposit"
+            msg.value == 2 * Listings[listing_id].price,
+            "You have not paid the security deposit"
         );
-        /// Listings[listing_id].sold_or_withdrawn = true;
+        // Check the security deposits
+        // Listings[listing_id].sold_or_withdrawn = true;
+
         emit encryptedKey(listing_id, H);
     }
 
@@ -243,6 +232,7 @@ contract Market {
         Listings[listing_id].seller.transfer(3*Listings[listing_id].price);
         /// Refund the buyer
         Listings[listing_id].buyer.transfer(Listings[listing_id].price);
+        activelistings -= 1;
         emit ListingChanged(Listings[listing_id].seller, listing_id);
         emit PurchaseComplete(Listings[listing_id]);
     }
@@ -256,5 +246,6 @@ contract Market {
         Listings[listing_id].state = State.Inactive;
         activelistings--;
         Listings[listing_id].seller.transfer(address(this).balance);
+        activelistings += 1;
     }
 }

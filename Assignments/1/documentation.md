@@ -27,3 +27,6 @@
 ---
 
 ### Buying an Item
+
+- The method `requestBuy` takes input as the listing unique id of the item to be bought and checks if it is a valid listing id and if the item is available.
+- Then it emits an event `PurchaseRequested`
