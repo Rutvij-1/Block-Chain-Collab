@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+/// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
 
@@ -6,7 +6,7 @@ contract Market {
     uint256 current_listing_id = 0;
     uint256 public activelistings = 0;
 
-    // structure for each listings
+    /// structure for each listings
     /// @dev uint is the unique listing id
     /// @dev seller stores the seller address
     /// @dev buyer stores the buyer address
@@ -45,9 +45,10 @@ contract Market {
     /// @dev this event is for when transaction is aborted
     event Aborted();
 
-    // create a listing for all possible listing id and make it private
+    /// @dev create a listing for all possible listing id and make it private
     mapping(uint256 => listings) private Listings;
 
+    /// State variables for the items listed. By default, it is Created
     enum State {
         Created,
         Active,
@@ -57,18 +58,22 @@ contract Market {
     }
     State public state;
 
+    /// Check whether a given condition is true
+    /// @param _condition condition statement to verify.
     modifier condition(bool _condition) {
         require(_condition);
         _;
     }
 
-    /// Check that buyer is not the seller itself
+    /// Seller cannot be buyer of the same item
+    /// @param listing_id Id of the listing.
     modifier ValidBuyer(uint256 listing_id) {
         require(Listings[listing_id].seller != msg.sender, "Invalid Buyer");
         _;
     }
 
-    /// Check that seller is not the buyer itself
+    /// Buyer cannot be seller of the same item
+    /// @param listing_id Id of the listing.
     modifier ValidSeller(uint256 listing_id) {
         require(Listings[listing_id].buyer != msg.sender, "Invalid Seller");
         _;
@@ -90,7 +95,8 @@ contract Market {
         _;
     }
 
-    /// Check that the listing id is valid
+    /// Item in use should be a valid listing
+    /// @param listing_id Id of the listing.
     modifier ValidListing(uint256 listing_id) {
         require(
             listing_id < current_listing_id && listing_id >= 0,
@@ -150,8 +156,8 @@ contract Market {
         emit ListingChanged(msg.sender, activelistings);
     }
 
-    /// Returns all unsold/unwithdrawn market items
-    ///@dev returns a list of active listings
+    /// Get all the active listings items in the market
+    /// @return a list of active listings
     function fetchactivelistings() external view returns (listings[] memory) {
         uint256 currentIndex = 0;
 
@@ -169,20 +175,26 @@ contract Market {
 
     /// Request from buyer to seller for item's purchase
     /// the contract emits a event to let the seller know that an buyer has been found
-    /// @dev listing id is the id of the item buyer is interested in
+    /// @param listing_id is the id of the item buyer is interested in
     function requestBuy(uint256 listing_id)
         external
         payable
         ValidBuyer(listing_id)
         ValidListing(listing_id)
         CheckState(listing_id)
-        SufficientBalance(listing_id)
     {
         /// Check whether item has a buyer already
         require(
             !Listings[listing_id].buyer_alloted,
             "the item already has a buyer,in midst of transaction"
         );
+
+        /// Check sufficient balance for transfer
+        require(
+            msg.sender.balance >= Listings[listing_id].price,
+            "Insuficient Balance for transaction"
+        );
+
         /// Check whether you have provided 2 times the selling price,for security purposes
         require(
             msg.value == 2 * Listings[listing_id].price,
@@ -212,7 +224,7 @@ contract Market {
             msg.value == 2 * Listings[listing_id].price,
             "You have not paid the security deposit"
         );
-        // Check the security deposits
+        Listings[listing_id].state = State.Sold;
         // Listings[listing_id].sold_or_withdrawn = true;
 
         emit encryptedKey(listing_id, H);
@@ -235,6 +247,7 @@ contract Market {
         /// Refund the buyer
         Listings[listing_id].buyer.transfer(Listings[listing_id].price);
         activelistings -= 1;
+        Listings[listing_id].state = State.Delivered;
         emit ListingChanged(Listings[listing_id].seller, listing_id);
         emit PurchaseComplete(Listings[listing_id]);
     }
@@ -243,8 +256,7 @@ contract Market {
     function abort(uint256 listing_id) public CheckState(listing_id) {
         emit Aborted();
         Listings[listing_id].state = State.Inactive;
-        activelistings--;
+        activelistings -= 1;
         Listings[listing_id].seller.transfer(address(this).balance);
-        activelistings += 1;
     }
 }
