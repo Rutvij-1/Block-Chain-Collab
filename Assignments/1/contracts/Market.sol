@@ -39,7 +39,6 @@ contract Market {
     /// @dev this event is for when item purchase is requested by buyer
     event PurchaseRequested(listings list, address indexed buyer);
     /// @dev this event is for when seller confirms item purchase by buyer
-    /// @dev the hash of the item string is added the block chain from where the buyer can retrieve and decrypt
     event encryptedKey(uint256 indexed listing_id, string H);
     /// event emitted when the a item is bought and both the seller and buyer gets the money/item
     event PurchaseComplete(listings list);
@@ -63,22 +62,26 @@ contract Market {
         _;
     }
 
+    /// Check that buyer is not the seller itself
     modifier ValidBuyer(uint256 listing_id) {
         require(Listings[listing_id].seller != msg.sender, "Invalid Buyer");
         _;
     }
 
+    /// Check that seller is not the buyer itself
     modifier ValidSeller(uint256 listing_id) {
         require(Listings[listing_id].buyer != msg.sender, "Invalid Seller");
         _;
     }
 
+    /// Check that buyer/seller has sufficient balance for the transaction
     modifier SufficientBalance(uint256 listing_id) {
         uint256 balance = getAccountBalance(msg.sender);
         require(balance >= msg.value, "Insuficient Balance for transaction");
         _;
     }
 
+    /// Check that an item is available
     modifier CheckState(uint256 listing_id) {
         require(
             !Listings[listing_id].sold_or_withdrawn,
@@ -87,6 +90,7 @@ contract Market {
         _;
     }
 
+    /// Check that the listing id is valid
     modifier ValidListing(uint256 listing_id) {
         require(
             listing_id < current_listing_id && listing_id >= 0,
@@ -95,10 +99,16 @@ contract Market {
         _;
     }
 
-    // function randomKeyGenerator() pure returns (string) {
-    //     return string(keccak256(abi.encodePacked(now)));
-    // }
+    /// Check that the string meets the required criteria
+    modifier ValidString(string memory str) {
+        require(
+            bytes(str).length <= 50,
+            "String Length is 50 characters maximum"
+        );
+        _;
+    }
 
+    /// gte balance of account
     function getAccountBalance(address account)
         public
         view
@@ -140,7 +150,7 @@ contract Market {
         emit ListingChanged(msg.sender, activelistings);
     }
 
-    /* Returns all unsold/unwithdrawn market items */
+    /// Returns all unsold/unwithdrawn market items
     ///@dev returns a list of active listings
     function fetchactivelistings() external view returns (listings[] memory) {
         uint256 currentIndex = 0;
@@ -188,11 +198,12 @@ contract Market {
     /// Sale of item from seller's side
     /// Transaction from the seller
     /// @dev listing id is the id of the item being sold_
-    /// @dev H is the hashed key for the item string (Hashed using the public key of the buyer off-chain)
+    /// @dev H is the unique string for the item
     function sellItem(uint256 listing_id, string calldata H)
         external
         payable
         ValidListing(listing_id)
+        ValidString(H)
         ValidSeller(listing_id)
         CheckState(listing_id)
     {

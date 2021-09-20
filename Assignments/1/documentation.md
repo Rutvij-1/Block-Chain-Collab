@@ -40,20 +40,29 @@ The transactions follow a procedure based on trust to ensure the validity and at
 
 - The method `requestBuy` takes input as the listing unique id of the item to be bought and checks if it is a valid listing id and if the item is available.
 - Then it emits an event `PurchaseRequested`
+- Then the method `sellItem` takes input listing id and the unique string to be assigned to the item.
+- Then it emits an event `encryptedKey`
+
+---
 
 ### Delivery
+
 - The method `confirmDelivery` is responsible for ensuring the delivery of the sold item by the seller. It checks the existence of valid listing Id, and proceeds to transfer 3*item_price to the seller and item_price to the buyer. This ensures the security and completeness of the transaction after which the state of the listing and active listings are updated.
 
-### Encryption
+---
 
+### Transactions
+
+- The buyer and the seller must escrow two times of the listing price to the contract.The buyer will send the money when he/she makes a request to buy and the seller when he/she sends the item.This is done to ensure trust and motivate the parties to act fairly.
+- The seller will get 3 times the listing price (initial deposit + listing price) and buyer will get the listing price (initial deposit -listing price) after the purchase is confirmed by the buyer.
+
+---
 
 ### Modifiers
+
 - Several modifiers are used to ensure the valid actions are taken during execution of a function. They are:
-
-Checking whether a listing is valid
-
-Checking the valid state of the item listing
-
-Checking whether the buyer/seller are eligible to execute a particular method
-
-Checking the sufficient balance of an account before transaction
+    - Checking whether a listing is valid
+    - Checking the valid state of the item listing
+    - Checking whether the buyer/seller are eligible to execute a particular method
+    - Checking the sufficient balance of an account before transaction
+    - Checking if the string of the item has length less than or equal to 50.
