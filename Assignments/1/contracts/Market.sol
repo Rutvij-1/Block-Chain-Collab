@@ -13,6 +13,9 @@ contract Market {
     /// @dev item_name is the name of the item
     /// @dev item_description has the description of the item
     /// @dev sold indicates whether the item is already sold or not
+    /// @dev buyer_alloted denotes whether some buyer has requested to purchase the listing
+    /// @dev buyer is the address of the buyer
+    /// @dev pubkey is the pubkey of the buyer and is assigned at the time of request of purchase
 
     struct listings {
         uint256 listing_id;
@@ -23,6 +26,7 @@ contract Market {
         bool sold_or_withdrawn;
         bool buyer_alloted;
         address payable buyer;
+        string pubkey;
         //address owner
     }
 
@@ -50,7 +54,7 @@ contract Market {
     /// @dev this event is for when listing is modified ,item sold or withdrawn
     event ListingChanged(address indexed seller, uint256 indexed index);
     /// @dev this event is for when item purchase is requested by buyer
-    event PurchaseRequested(listings list, address indexed buyer);
+    event PurchaseRequested(listings list, address indexed buyer,string public_key);
     /// @dev this event is for when seller confirms item purchase by buyer
     /// @dev the hash of the item string is added the block chain from where the buyer can retrieve and decrypt
     event encryptedKey(uint256 indexed listing_id, string H);
@@ -94,7 +98,8 @@ contract Market {
             item_description,
             false, 
             false,
-            address(0)
+            address(0), 
+            ''
         );
         // emit the update
         emit ListingCreated(
@@ -127,7 +132,8 @@ contract Market {
     //request from buyer to seller for item's purchase
     // the contract emits a event to let the seller know that an buyer has been found
     /// @dev listing id is the id of the item buyer is interested in
-    function requestBuy(uint256 listing_id) external payable {
+    /// @dev public key is the string version of the public
+    function requestBuy(uint256 listing_id,string calldata public_key) external payable {
         require(
             listing_id < current_listing_id && listing_id >= 0,
             "Listing id is invalid"
@@ -151,9 +157,10 @@ contract Market {
         //Check that the seller is not the buyer
 
         // let the seller know you have found a buyer
+        Listings[listing_id].pubkey = public_key;
         Listings[listing_id].buyer = msg.sender;
         Listings[listing_id].buyer_alloted = true;
-        emit PurchaseRequested(Listings[listing_id], msg.sender);
+        emit PurchaseRequested(Listings[listing_id], msg.sender,public_key);
     }
 
     //Sale of item from seller's side
@@ -175,7 +182,7 @@ contract Market {
         );
         // check whether the caller is the seller
         require(
-          msg.value = 2*Listings[listing_id].price,
+          msg.value == 2*Listings[listing_id].price,
           "You have not paid the security deposit"
         );
         // Check the security deposits
