@@ -59,14 +59,6 @@ contract Market {
     }
     State public state;
 
-    /// @dev Get the account balance of an address
-    /// @param account address of the account
-    /// @return an uint balance of the account
-    function getAccountBalance(address account) external view returns(uint256 accountBalance)
-    {
-        accountBalance = account.balance;
-        return accountBalance;
-    }
 
     /// Check whether a given condition is true
     /// @param _condition condition statement to verify.
@@ -89,14 +81,6 @@ contract Market {
         _;
     }
   
-    /// Insufficient balance cannot be used for transfer
-    /// @param listing_id Id of the listing.
-    modifier SufficientBalance(uint256 listing_id) {
-        uint256 balance = getAccountBalance(msg.sender);
-        require(balance >= msg.value, "Insuficient Balance for transaction");
-        _;
-    }
-    
     /// Already sold/inactive item cannot be bought
     /// @param listing_id Id of the listing.
     modifier CheckState(uint256 listing_id) {
@@ -152,7 +136,7 @@ contract Market {
         emit ListingChanged(msg.sender, activelistings);
     }
 
-    /* Get all the active listings items in the market */
+    /// Get all the active listings items in the market
     /// @return a list of active listings
     function fetchactivelistings() external view returns (listings[] memory) {
         uint256 currentIndex = 0;
@@ -176,13 +160,19 @@ contract Market {
     ValidBuyer(listing_id)
     ValidListing(listing_id)
     CheckState(listing_id)
-    SufficientBalance(listing_id)
     {
         /// Check whether item has a buyer already
         require(
             !Listings[listing_id].buyer_alloted,
             "the item already has a buyer,in midst of transaction"
         );
+           
+        /// Check sufficient balance for transfer
+        require(
+            msg.sender.balance >= Listings[listing_id].price, 
+            "Insuficient Balance for transaction"
+        );
+
         /// Check whether you have provided 2 times the selling price,for security purposes
         require(
             msg.value == 2 * Listings[listing_id].price,
