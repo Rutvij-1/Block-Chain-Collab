@@ -5,13 +5,7 @@ pragma experimental ABIEncoderV2;
 contract Market {
     uint256 current_listing_id = 0;
     uint256 public activelistings = 0;
-<<<<<<< HEAD
     
-=======
-    address payable cur_seller;
-    address payable cur_buyer;
-
->>>>>>> c97aace2edd9cbb1f74f0b155b4562b74bbeb368
     // structure for each listings
     /// @dev uint is the unique listing id
     /// @dev seller stores the seller address
@@ -52,9 +46,10 @@ contract Market {
     /// @dev this event is for when transaction is aborted
     event Aborted();
 
-    // create a listing for all possible listing id and make it private
+    /// @dev create a listing for all possible listing id and make it private
     mapping(uint256 => listings) private Listings;
 
+    /// State variables for the items listed. By default, it is Created
     enum State {
         Created,
         Active,
@@ -64,11 +59,24 @@ contract Market {
     }
     State public state;
 
+    /// @dev Get the account balance of an address
+    /// @param account address of the account
+    /// @return an uint balance of the account
+    function getAccountBalance(address account) external view returns(uint256 accountBalance)
+    {
+        accountBalance = account.balance;
+        return accountBalance;
+    }
+
+    /// Check whether a given condition is true
+    /// @param _condition condition statement to verify.
     modifier condition(bool _condition) {
         require(_condition);
         _;
     }
-  
+
+    /// Seller cannot be buyer of the same item
+    /// @param listing_id Id of the listing.
     modifier ValidBuyer(uint256 listing_id) {
       require(
         Listings[listing_id].seller != msg.sender,
@@ -77,6 +85,8 @@ contract Market {
       _;
     }
 
+    /// Buyer cannot be seller of the same item
+    /// @param listing_id Id of the listing.
     modifier ValidSeller(uint256 listing_id) {
       require(
         Listings[listing_id].buyer != msg.sender,
@@ -84,7 +94,9 @@ contract Market {
       );
       _;
     }
-
+  
+    /// Insufficient balance cannot be used for transfer
+    /// @param listing_id Id of the listing.
     modifier SufficientBalance(uint256 listing_id) {
       uint256 balance = getAccountBalance(msg.sender);
       require(
@@ -93,7 +105,9 @@ contract Market {
       );
       _;
     }
-
+    
+    /// Already sold/inactive item cannot be bought
+    /// @param listing_id Id of the listing.
     modifier CheckState(uint256 listing_id) {
       require(
         !Listings[listing_id].sold_or_withdrawn,
@@ -101,7 +115,9 @@ contract Market {
       );
       _;
     }
-
+    
+    /// Item in use should be a valid listing
+    /// @param listing_id Id of the listing.
     modifier ValidListing(uint256 listing_id) {
       require(
           listing_id < current_listing_id && listing_id >= 0,
@@ -113,14 +129,12 @@ contract Market {
     // function randomKeyGenerator() pure returns (string) {
     //     return string(keccak256(abi.encodePacked(now)));
     // }
-    
-    function getAccountBalance(address account) public view returns(uint accountBalance)
-    {
-        accountBalance = account.balance;
-    }
 
-    //create a listing for sale in the market place
-    //onlySeller
+
+    /// Create a listing for sale in the market place
+    /// @param price price of the item
+    /// @param item_name name of the item
+    /// @param item_description is the description of the item
     function createListings(
         uint256 price,
         string calldata item_name,
@@ -155,8 +169,8 @@ contract Market {
         emit ListingChanged(msg.sender, activelistings);
     }
 
-    /* Returns all unsold/unwithdrawn market items */
-    ///@dev returns a list of active listings
+    /* Get all the active listings items in the market */
+    /// @return a list of active listings
     function fetchactivelistings() external view returns (listings[] memory) {
         uint256 currentIndex = 0;
 
@@ -174,7 +188,7 @@ contract Market {
 
     /// Request from buyer to seller for item's purchase
     /// the contract emits a event to let the seller know that an buyer has been found
-    /// @dev listing id is the id of the item buyer is interested in
+    /// @param listing_id is the id of the item buyer is interested in
     function requestBuy(uint256 listing_id) external payable 
     ValidBuyer(listing_id)
     ValidListing(listing_id)
@@ -200,9 +214,9 @@ contract Market {
 
     /// Sale of item from seller's side
     /// Transaction from the seller 
-    /// @dev listing id is the id of the item being sold_
-    /// @dev H is the hashed key for the item string (Hashed using the public key of the buyer off-chain)
-    function sellItem(uint256 listing_id,string calldata  H) external payable 
+    /// @param listing_id is the id of the item being sold_
+    /// @param H is the hashed key for the item string (Hashed using the public key of the buyer off-chain)
+    function sellItem(uint256 listing_id, string calldata  H) external payable 
     ValidListing(listing_id)
     ValidSeller(listing_id)
     CheckState(listing_id)
@@ -212,8 +226,8 @@ contract Market {
             msg.value == 2 * Listings[listing_id].price,
             "You have not paid the security deposit"
         );
-        // Check the security deposits
-        // Listings[listing_id].sold_or_withdrawn = true;
+        Listings[listing_id].state = State.Sold;
+        // Listings[listing_id].sold_or_withdrawn = true; 
 
         emit encryptedKey(listing_id, H);
     }
@@ -233,6 +247,7 @@ contract Market {
         /// Refund the buyer
         Listings[listing_id].buyer.transfer(Listings[listing_id].price);
         activelistings -= 1;
+        Listings[listing_id].state = State.Delivered;
         emit ListingChanged(Listings[listing_id].seller, listing_id);
         emit PurchaseComplete(Listings[listing_id]);
     }
@@ -244,8 +259,7 @@ contract Market {
     {
         emit Aborted();
         Listings[listing_id].state = State.Inactive;
-        activelistings--;
+        activelistings-=1;
         Listings[listing_id].seller.transfer(address(this).balance);
-        activelistings += 1;
     }
 }
