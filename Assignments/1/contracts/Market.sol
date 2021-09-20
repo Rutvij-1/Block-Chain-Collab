@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+/// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
 
@@ -6,7 +6,7 @@ contract Market {
     uint256 current_listing_id = 0;
     uint256 public activelistings = 0;
     
-    // structure for each listings
+    /// structure for each listings
     /// @dev uint is the unique listing id
     /// @dev seller stores the seller address
     /// @dev buyer stores the buyer address
@@ -78,58 +78,44 @@ contract Market {
     /// Seller cannot be buyer of the same item
     /// @param listing_id Id of the listing.
     modifier ValidBuyer(uint256 listing_id) {
-      require(
-        Listings[listing_id].seller != msg.sender,
-        "Invalid Buyer"
-      );
-      _;
+        require(Listings[listing_id].seller != msg.sender, "Invalid Buyer");
+        _;
     }
 
     /// Buyer cannot be seller of the same item
     /// @param listing_id Id of the listing.
     modifier ValidSeller(uint256 listing_id) {
-      require(
-        Listings[listing_id].buyer != msg.sender,
-        "Invalid Seller"
-      );
-      _;
+        require(Listings[listing_id].buyer != msg.sender, "Invalid Seller");
+        _;
     }
   
     /// Insufficient balance cannot be used for transfer
     /// @param listing_id Id of the listing.
     modifier SufficientBalance(uint256 listing_id) {
-      uint256 balance = getAccountBalance(msg.sender);
-      require(
-        balance >= msg.value,
-        "Insuficient Balance for transaction"
-      );
-      _;
+        uint256 balance = getAccountBalance(msg.sender);
+        require(balance >= msg.value, "Insuficient Balance for transaction");
+        _;
     }
     
     /// Already sold/inactive item cannot be bought
     /// @param listing_id Id of the listing.
     modifier CheckState(uint256 listing_id) {
-      require(
-        !Listings[listing_id].sold_or_withdrawn,
-        "Item has already been bought / withdrawn"
-      );
-      _;
+        require(
+            !Listings[listing_id].sold_or_withdrawn,
+            "Item has already been bought / withdrawn"
+        );
+        _;
     }
     
     /// Item in use should be a valid listing
     /// @param listing_id Id of the listing.
     modifier ValidListing(uint256 listing_id) {
-      require(
-          listing_id < current_listing_id && listing_id >= 0,
-          "Invalid Listing Id"
-      );
-      _;
+        require(
+            listing_id < current_listing_id && listing_id >= 0,
+            "Invalid Listing Id"
+        );
+        _;
     }
-   
-    // function randomKeyGenerator() pure returns (string) {
-    //     return string(keccak256(abi.encodePacked(now)));
-    // }
-
 
     /// Create a listing for sale in the market place
     /// @param price price of the item
@@ -139,10 +125,7 @@ contract Market {
         uint256 price,
         string calldata item_name,
         string calldata item_description
-    ) 
-    external payable 
-    condition(price>0)
-    {
+    ) external payable condition(price > 0) {
         uint256 listing_id = current_listing_id;
         current_listing_id += 1;
         activelistings += 1;
@@ -197,13 +180,13 @@ contract Market {
     {
         /// Check whether item has a buyer already
         require(
-          !Listings[listing_id].buyer_alloted,
-          "the item already has a buyer,in midst of transaction"
-        ); 
+            !Listings[listing_id].buyer_alloted,
+            "the item already has a buyer,in midst of transaction"
+        );
         /// Check whether you have provided 2 times the selling price,for security purposes
         require(
-          msg.value == 2*Listings[listing_id].price,
-          "The required deposit for the purchase not given "
+            msg.value == 2 * Listings[listing_id].price,
+            "The required deposit for the purchase not given "
         );
 
         /// Let the seller know you have found a buyer
@@ -236,14 +219,16 @@ contract Market {
     /// the buyer confirms to get the refund of the money owed.(price)
     /// the seller gets his amount + price (3 * price)
     /// @dev the listing id is the item being exchanged
-    function confirmDelivery(uint256 listing_id) external payable 
-    ValidListing(listing_id)
-    ValidBuyer(listing_id)
-    CheckState(listing_id)
+    function confirmDelivery(uint256 listing_id)
+        external
+        payable
+        ValidListing(listing_id)
+        ValidBuyer(listing_id)
+        CheckState(listing_id)
     {
         /// Refund the seller
         Listings[listing_id].sold_or_withdrawn = true;
-        Listings[listing_id].seller.transfer(3*Listings[listing_id].price);
+        Listings[listing_id].seller.transfer(3 * Listings[listing_id].price);
         /// Refund the buyer
         Listings[listing_id].buyer.transfer(Listings[listing_id].price);
         activelistings -= 1;
@@ -253,10 +238,7 @@ contract Market {
     }
 
     /// Abort the purchase and reclaim the ether.
-    function abort(uint256 listing_id)
-    public
-    CheckState(listing_id)
-    {
+    function abort(uint256 listing_id) public CheckState(listing_id) {
         emit Aborted();
         Listings[listing_id].state = State.Inactive;
         activelistings-=1;
