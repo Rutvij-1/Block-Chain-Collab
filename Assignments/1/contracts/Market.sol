@@ -79,14 +79,8 @@ contract Market {
         _;
     }
 
-    /// Check that buyer/seller has sufficient balance for the transaction
-    modifier SufficientBalance(uint256 listing_id) {
-        uint256 balance = getAccountBalance(msg.sender);
-        require(balance >= msg.value, "Insuficient Balance for transaction");
-        _;
-    }
-
     /// Check that an item is available
+    /// @param listing_id Id of the listing.
     modifier CheckState(uint256 listing_id) {
         require(
             !Listings[listing_id].sold_or_withdrawn,
@@ -106,6 +100,7 @@ contract Market {
     }
 
     /// Check that the string meets the required criteria
+    /// @param str Item string.
     modifier ValidString(string memory str) {
         require(
             bytes(str).length <= 50,
@@ -114,7 +109,8 @@ contract Market {
         _;
     }
 
-    /// gte balance of account
+    /// get balance of account
+    /// @param account Address of the account.
     function getAccountBalance(address account)
         public
         view
