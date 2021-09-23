@@ -37,7 +37,7 @@ contract Market {
     /// @dev this event is for when listing is modified ,item sold or withdrawn
     event ListingChanged(address indexed seller, uint256 indexed index);
     /// @dev this event is for when item purchase is requested by buyer
-    event PurchaseRequested(listings list, address indexed buyer);
+    event PurchaseRequested(listings list, address indexed buyer,string pub_key);
     /// @dev this event is for when seller confirms item purchase by buyer
     event encryptedKey(uint256 indexed listing_id, string H);
     /// event emitted when the a item is bought and both the seller and buyer gets the money/item
@@ -176,7 +176,7 @@ contract Market {
     /// Request from buyer to seller for item's purchase
     /// the contract emits a event to let the seller know that an buyer has been found
     /// @param listing_id is the id of the item buyer is interested in
-    function requestBuy(uint256 listing_id)
+    function requestBuy(uint256 listing_id,string calldata pubkey)
         external
         payable
         ValidBuyer(listing_id)
@@ -204,7 +204,7 @@ contract Market {
         /// Let the seller know you have found a buyer
         Listings[listing_id].buyer = msg.sender;
         Listings[listing_id].buyer_alloted = true;
-        emit PurchaseRequested(Listings[listing_id], msg.sender);
+        emit PurchaseRequested(Listings[listing_id], msg.sender,pubkey);
     }
 
     /// Sale of item from seller's side
@@ -215,7 +215,7 @@ contract Market {
         external
         payable
         ValidListing(listing_id)
-        ValidString(H)
+       // ValidString(H)
         ValidSeller(listing_id)
         CheckState(listing_id)
     {
