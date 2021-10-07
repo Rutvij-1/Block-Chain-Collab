@@ -28,6 +28,15 @@ contract Market {
         string item_description;
         bool sold_or_withdrawn;
         bool buyer_alloted;
+        Bid bids;
+        uint256 highestBid;
+        uint256 secondHighestBid;
+        address highestBidder;
+        address beneficiary;
+        uint256 auctionStart;
+        uint256 biddingEnd;
+        uint256 revealEnd;
+        bool ended;
         State state;
     }
 
