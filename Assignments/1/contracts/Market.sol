@@ -2,12 +2,11 @@
 pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
 
-/// @title The contract for buying and selling items on a market
 contract Market {
     uint256 current_listing_id = 0;
     uint256 public activelistings = 0;
 
-    /// @notice structure for each listings
+    /// structure for each listings
     /// @dev uint is the unique listing id
     /// @dev seller stores the seller address
     /// @dev buyer stores the buyer address
@@ -38,10 +37,10 @@ contract Market {
     /// @dev this event is for when listing is modified ,item sold or withdrawn
     event ListingChanged(address indexed seller, uint256 indexed index);
     /// @dev this event is for when item purchase is requested by buyer
-    event PurchaseRequested(listings list, address indexed buyer,string pub_key);
+    event PurchaseRequested(listings list, address indexed buyer);
     /// @dev this event is for when seller confirms item purchase by buyer
     event encryptedKey(uint256 indexed listing_id, string H);
-    /// @dev event emitted when the a item is bought and both the seller and buyer gets the money/item
+    /// event emitted when the a item is bought and both the seller and buyer gets the money/item
     event PurchaseComplete(listings list);
     /// @dev this event is for when transaction is aborted
     event Aborted();
@@ -49,7 +48,7 @@ contract Market {
     /// @dev create a listing for all possible listing id and make it private
     mapping(uint256 => listings) private Listings;
 
-    /// @dev State variables for the items listed. By default, it is Created
+    /// State variables for the items listed. By default, it is Created
     enum State {
         Created,
         Active,
@@ -59,30 +58,35 @@ contract Market {
     }
     State public state;
 
-    /// @notice Check whether a given condition is true
+    /// Check whether a given condition is true
     /// @param _condition condition statement to verify.
     modifier condition(bool _condition) {
         require(_condition);
         _;
     }
 
-    /// @notice Seller cannot be buyer of the same item
+    /// Seller cannot be buyer of the same item
     /// @param listing_id Id of the listing.
     modifier ValidBuyer(uint256 listing_id) {
         require(Listings[listing_id].seller != msg.sender, "Invalid Buyer");
         _;
     }
 
-    /// @notice Buyer cannot be seller of the same item
+    /// Buyer cannot be seller of the same item
     /// @param listing_id Id of the listing.
     modifier ValidSeller(uint256 listing_id) {
         require(Listings[listing_id].buyer != msg.sender, "Invalid Seller");
         _;
     }
 
+    /// Check that buyer/seller has sufficient balance for the transaction
+    modifier SufficientBalance(uint256 listing_id) {
+        uint256 balance = getAccountBalance(msg.sender);
+        require(balance >= msg.value, "Insuficient Balance for transaction");
+        _;
+    }
 
-    /// @notice Check that an item is available
-    /// @param listing_id Id of the listing.
+    /// Check that an item is available
     modifier CheckState(uint256 listing_id) {
         require(
             !Listings[listing_id].sold_or_withdrawn,
@@ -91,7 +95,7 @@ contract Market {
         _;
     }
 
-    /// @notice Item in use should be a valid listing
+    /// Item in use should be a valid listing
     /// @param listing_id Id of the listing.
     modifier ValidListing(uint256 listing_id) {
         require(
@@ -101,8 +105,7 @@ contract Market {
         _;
     }
 
-    /// @notice Check that the string meets the required criteria
-    /// @param str The item string.
+    /// Check that the string meets the required criteria
     modifier ValidString(string memory str) {
         require(
             bytes(str).length <= 50,
@@ -111,8 +114,7 @@ contract Market {
         _;
     }
 
-    /// @notice returns balance of account
-    /// @param account Address of the account.
+    /// gte balance of account
     function getAccountBalance(address account)
         public
         view
@@ -121,10 +123,8 @@ contract Market {
         accountBalance = account.balance;
     }
 
-    /// @notice Create a listing for sale in the market place
-    /// @param price Price of the item listed.
-    /// @param item_name Name of item listed
-    /// @param item_description Description of item.
+    //create a listing for sale in the market place
+    //onlySeller
     function createListings(
         uint256 price,
         string calldata item_name,
@@ -145,7 +145,7 @@ contract Market {
             false,
             State.Active
         );
-        /// @dev emit the update
+        // emit the update
         emit ListingCreated(
             listing_id,
             msg.sender,
@@ -156,14 +156,14 @@ contract Market {
         emit ListingChanged(msg.sender, activelistings);
     }
 
-    /// @notice Get all the active listings items in the market
+    /// Get all the active listings items in the market
     /// @return a list of active listings
     function fetchactivelistings() external view returns (listings[] memory) {
         uint256 currentIndex = 0;
 
         listings[] memory active_list = new listings[](activelistings);
         for (uint256 i = 0; i < current_listing_id; i++) {
-            /// @dev only consider listings which are unsold/not withdrawn
+            // only consider listings which are unsold/not withdrawn
             if (Listings[i].sold_or_withdrawn == false) {
                 listings storage currentlisting = Listings[i];
                 active_list[currentIndex] = currentlisting;
@@ -173,10 +173,10 @@ contract Market {
         return active_list;
     }
 
-    /// @notice Request from buyer to seller for item's purchase
-    /// @dev the contract emits a event to let the seller know that an buyer has been found
+    /// Request from buyer to seller for item's purchase
+    /// the contract emits a event to let the seller know that an buyer has been found
     /// @param listing_id is the id of the item buyer is interested in
-    function requestBuy(uint256 listing_id,string calldata pubkey)
+    function requestBuy(uint256 listing_id)
         external
         payable
         ValidBuyer(listing_id)
@@ -204,18 +204,18 @@ contract Market {
         /// Let the seller know you have found a buyer
         Listings[listing_id].buyer = msg.sender;
         Listings[listing_id].buyer_alloted = true;
-        emit PurchaseRequested(Listings[listing_id], msg.sender,pubkey);
+        emit PurchaseRequested(Listings[listing_id], msg.sender);
     }
 
-    /// @notice Sale of item from seller's side
-    /// @dev Transaction from the seller
+    /// Sale of item from seller's side
+    /// Transaction from the seller
     /// @dev listing id is the id of the item being sold_
     /// @dev H is the unique string for the item
     function sellItem(uint256 listing_id, string calldata H)
         external
         payable
         ValidListing(listing_id)
-       /// ValidString(H)
+        ValidString(H)
         ValidSeller(listing_id)
         CheckState(listing_id)
     {
@@ -225,15 +225,15 @@ contract Market {
             "You have not paid the security deposit"
         );
         Listings[listing_id].state = State.Sold;
-        /// Listings[listing_id].sold_or_withdrawn = true;
+        // Listings[listing_id].sold_or_withdrawn = true;
 
         emit encryptedKey(listing_id, H);
     }
 
-    /// @notice Confirmation from buyer on receiving item
-    /// @dev the buyer confirms to get the refund of the money owed.(price)
-    /// @dev the seller gets his amount + price (3 * price)
-    /// @param listing_id the listing id is the item being exchanged
+    /// Confirmation from buyer on receiving item
+    /// the buyer confirms to get the refund of the money owed.(price)
+    /// the seller gets his amount + price (3 * price)
+    /// @dev the listing id is the item being exchanged
     function confirmDelivery(uint256 listing_id)
         external
         payable
@@ -252,7 +252,7 @@ contract Market {
         emit PurchaseComplete(Listings[listing_id]);
     }
 
-    /// @notice Abort the purchase and reclaim the ether.
+    /// Abort the purchase and reclaim the ether.
     function abort(uint256 listing_id) public CheckState(listing_id) {
         emit Aborted();
         Listings[listing_id].state = State.Inactive;
