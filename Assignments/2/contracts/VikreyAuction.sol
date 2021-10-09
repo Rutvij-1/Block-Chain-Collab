@@ -41,17 +41,15 @@ contract VikreyAuction {
         _;
     }
     modifier afterTime(uint256 time) {
-        // if (block.timestamp <= time) {
-        //     revert TooEarly(time);
-        // }
         require(block.timestamp > time, "Too Early");
         _;
     }
     modifier newBidder() {
-        // if (bidAlready[msg.sender]) {
-        //     revert AlreadyBid(msg.sender);
-        // }
         require(!bidAlready[msg.sender], "Bidder Already placed their bid");
+        _;
+    }
+    modifier validBidder() {
+        require(msg.sender != beneficiary, "Beneficiary cannot bid");
         _;
     }
 
@@ -72,6 +70,7 @@ contract VikreyAuction {
         payable
         beforeTime(biddingEnd)
         newBidder
+        validBidder
     {
         bids[msg.sender] = Bid(bid_hash, msg.value);
         bidAlready[msg.sender] = true;
@@ -81,7 +80,7 @@ contract VikreyAuction {
     function validReveal(
         address bidder,
         uint256 value,
-        bytes32 secret
+        string memory secret
     ) internal returns (bool isValid) {
         if (
             bids[bidder].bidHash == keccak256(abi.encodePacked(value, secret))
@@ -110,11 +109,12 @@ contract VikreyAuction {
         return true;
     }
 
-    function reveal(uint256 value, bytes32 secret)
+    function reveal(uint256 value, string memory secret)
         public
         afterTime(biddingEnd)
         beforeTime(revealEnd)
     {
+        require(bidAlready[msg.sender], "This person is not a bidder");
         if (validReveal(msg.sender, value, secret)) {
             emit ValidBidRevealed(msg.sender, value);
             address payable payable_sender = msg.sender;
