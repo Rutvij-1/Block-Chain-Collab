@@ -40,7 +40,7 @@ class App extends Component {
         Market.abi,
         deployedNetwork && deployedNetwork.address,
       );
-      console.log(instance);
+      console.log(accounts);
       // instance.options.address = `${accounts[0]}`
 
       // Set web3, accounts, and contract to the state, and then proceed with an
@@ -63,12 +63,12 @@ class App extends Component {
     // await contract.methods.createListings(200,"Book",
 		// 	"Harry Potter and the Philosopher's Stone"
 		// ).send({ from: accounts[0] });
-		await contract.methods.createListings(201100, "Mobile Phone", "One Plus 5T").call({from:accounts[0]})
-    .then(res=>{
-      console.log(res);
-    },function(err){
-      console.log(`error ${err}`);
-    });
+		await contract.methods.createListings(201100, "Mobile Phone", "One Plus 5T").call({from:accounts[0]});
+    // .then(res=>{
+    //   console.log(res);
+    // },function(err){
+    //   console.log(`error ${err}`);
+    // });
 		// await contract.methods.createListings(20000, "Mobile Phone", "One Plus 5T").send({ from: accounts[0] });
 		// await contract.methods.createListings(3500,"Netflix screen","3 Screens, FHD").send({ from: accounts[0] });
     // await contract.methods.set(10).send({ from: accounts[0] });
@@ -83,21 +83,22 @@ class App extends Component {
   activeListings = async() => {
     const { accounts, contract } = this.state;
     // console.log(accounts);
-		await contract.methods.createListings(20000, "Mobile Phone", "One Plus 5T").call({from:accounts[0]});
-		await contract.methods.createListings(20010, "Mobile Phone", "One Plus 5T").call()
+		await contract.methods.createListings(20000, "Mobile Phone", "One Plus 5T").send({from:accounts[0]})
     .then(res=>{
       console.log(res);
     },function(err){
       console.log(`error ${err}`);
     });
+
+		await contract.methods.createListings(20010, "Mobile Phone", "One Plus 5T");
 		// await contract.methods.createListings(20011, "Mobile Phone", "One Plus 5T").call();
-    let temp = await contract.methods.fetchactivelistings().call()
-    .then(res=>{
-      console.log(res);
-    },function(err){
-      console.log(`error ${err}`);
-    });
-    // console.log(temp);
+    let temp = await contract.methods.fetchactivelistings().call();
+    // .then(res=>{
+    //   console.log(res);
+    // },function(err){
+    //   console.log(`error ${err}`);
+    // });
+    console.log(temp);
 
     // send({ from: this.state.accounts[0] });
     // console.log(listings);

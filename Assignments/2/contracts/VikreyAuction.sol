@@ -24,6 +24,7 @@ contract VikreyAuction {
 
     event AuctionEnded(address winner, uint256 secondHighestBid);
     event BidForItem(address bidder, uint256 deposit);
+    event BidRevealFailed(address bidder, bytes32 bidHash);
     event ValidBidRevealed(address bidder, uint256 value);
     event InvalidBidRevealed(address bidder, uint256 value);
     event BidderWithdrawn(address bidder, uint256 value);
@@ -81,13 +82,30 @@ contract VikreyAuction {
         address bidder,
         uint256 value,
         string memory secret
-    ) internal returns (bool isValid) {
-        if (
-            bids[bidder].bidHash == keccak256(abi.encodePacked(value, secret))
-        ) {
+    ) internal view returns (bool isValid) {
+        if (bids[bidder].bidHash == keccak256(abi.encode(value, secret))) {
             return true;
         }
         return false;
+    }
+
+    function showHash(uint256 value, string memory secret)
+        public
+        pure
+        returns (bytes32 H)
+    {
+        return keccak256(abi.encode(value, secret));
+    }
+
+    function checkHash(
+        uint256 value,
+        string memory secret,
+        bytes32 H
+    ) public pure {
+        require(
+            keccak256(abi.encodePacked(value, secret)) == H,
+            "Hash does not match"
+        );
     }
 
     function placeBid(address payable bidder, uint256 value)
@@ -130,22 +148,22 @@ contract VikreyAuction {
                 emit InvalidBidRevealed(msg.sender, value);
                 payable_sender.transfer(bids[msg.sender].deposit);
             }
+        } else {
+            emit BidRevealFailed(msg.sender, bids[msg.sender].bidHash);
         }
     }
 
     function withdraw() public {
         emit BidderWithdrawn(msg.sender, pendingReturns[msg.sender]);
         if (pendingReturns[msg.sender] > 0) {
+            uint256 value = pendingReturns[msg.sender];
             pendingReturns[msg.sender] = 0;
             address payable payable_sender = msg.sender;
-            payable_sender.transfer(pendingReturns[msg.sender]);
+            payable_sender.transfer(value);
         }
     }
 
     function endAuction() public afterTime(revealEnd) {
-        // if (ended) {
-        //     revert AuctionAlreadyEnded();
-        // }
         require(!ended, "Auction has Already Ended");
         emit AuctionEnded(winner, secondHighestBid);
         ended = true;
