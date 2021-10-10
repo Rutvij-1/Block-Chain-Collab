@@ -168,11 +168,11 @@ contract BlindAuction {
     }
 
     modifier onlyBefore(uint256 _time) {
-        require(block.timestamp < _time);
+        require(block.timestamp < _time, "After time");
         _;
     }
     modifier onlyAfter(uint256 _time) {
-        require(block.timestamp > _time);
+        require(block.timestamp > _time, "before time");
         _;
     }
 
@@ -309,8 +309,8 @@ contract BlindAuction {
     /// @param auction_id id of the auction
     function reveal(
         uint256 value,
-        bool fake,
-        bytes32 secret,
+        //bool fake,
+        string calldata secret,
         uint256 auction_id
     )
         external
@@ -368,6 +368,7 @@ contract BlindAuction {
         }
         Auctions[auction_id].highestBid = value;
         Auctions[auction_id].highestBidder = bidder;
+        emit NewHighestBid(auction_id, bidder, value);
         return true;
     }
 
@@ -384,6 +385,11 @@ contract BlindAuction {
             Auctions[auction_id].pendingReturns[msg.sender] = 0;
             address payable payable_sender = msg.sender;
             payable_sender.transfer(value);
+            emit BidderRefunded(
+                auction_id,
+                msg.sender,
+                Auctions[auction_id].pendingReturns[msg.sender]
+            );
         }
     }
 
