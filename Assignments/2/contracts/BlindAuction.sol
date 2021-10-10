@@ -304,7 +304,6 @@ contract BlindAuction {
     /// @dev correctly blinded invalid bids and for all bids except for
     /// @dev the totally highest.
     /// @param value value of the bid
-    /// @param fake not sure what fake is for
     /// @param secret again not sure
     /// @param auction_id id of the auction
     function reveal(
@@ -325,15 +324,12 @@ contract BlindAuction {
         Bid storage bidToCheck = Auctions[auction_id].bids[msg.sender];
 
         // improper revealing
-        if (
-            bidToCheck.bidHash !=
-            keccak256(abi.encodePacked(value, fake, secret))
-        ) {
+        if (bidToCheck.bidHash != keccak256(abi.encodePacked(value, secret))) {
             // Bid was not actually revealed.
             // Do not refund deposit.
         } else {
             refund += bidToCheck.deposit;
-            if (!fake && bidToCheck.deposit >= value) {
+            if (bidToCheck.deposit >= value) {
                 if (placeBid(auction_id, msg.sender, value)) refund -= value;
             }
         }
@@ -368,7 +364,7 @@ contract BlindAuction {
         }
         Auctions[auction_id].highestBid = value;
         Auctions[auction_id].highestBidder = bidder;
-        emit NewHighestBid(auction_id, bidder, value);
+        // emit NewHighestBid(auction_id, bidder, value);
         return true;
     }
 
@@ -385,11 +381,11 @@ contract BlindAuction {
             Auctions[auction_id].pendingReturns[msg.sender] = 0;
             address payable payable_sender = msg.sender;
             payable_sender.transfer(value);
-            emit BidderRefunded(
-                auction_id,
-                msg.sender,
-                Auctions[auction_id].pendingReturns[msg.sender]
-            );
+            // emit BidderRefunded(
+            //     auction_id,
+            //     msg.sender,
+            //     Auctions[auction_id].pendingReturns[msg.sender]
+            // );
         }
     }
 
