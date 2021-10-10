@@ -144,14 +144,41 @@ contract BlindAuction {
     ///@dev bid revealed 
     ///@param Auction_id is the id of the auction
     ///@param bidder is the address of the revealer
-    ///@param success refers to whether the bid is succesfully revealed and refund done
-    event BidRevealed(uint256 Auction_id,address bidder,bool success);
+    event BidRevealed(uint256 Auction_id,address bidder);
 
-    ///@dev event to notify withdrawal of bids  
+
+    ///@dev bid revealed failed 
+    ///@param Auction_id is the id of the auction
+    ///@param bidder is the address of the revealer
+    event BidRevealFailed(uint256 Auction_id,address bidder);
+
+
+
+
+    ///@dev event to notify Refunds of bids  
     ///@param auction_id is the id of the auction
     ///@param bidder is the address of the revealer
     ///@param bid_value  refers to whether the bid is succesfully revealed and refund done
-    event BidderWithdrawn(uint256 auction_id,address bidder,uint256 bid_value);
+    event BidderRefunded(uint256 auction_id,address bidder,uint256 bid_value);
+
+
+    ///@dev event to notify Refunds of bids  
+    ///@param auction_id is the id of the auction
+    ///@param bidder is the address of the revealer
+    ///@param balance  refers to whether the bid is succesfully revealed and refund done
+    event BalanceRefunded(uint256 auction_id,address bidder,uint256 balance);
+
+
+    ///@dev event to notify when the deposit is not enough
+    ///@param auction_id is the id of the auction
+    ///@param bidder is the bidder
+    event DepositNotEnough(uint256 auction_id,address bidder);
+
+    ///@dev to notify highest Bid has been modified
+    ///@param auction_id is the id of the auction
+    ///@param bidder is the bidder
+    ///@param bid_value refers to the bid 
+    event NewHighestBid(uint256 auction_id,address bidder,uint256 bid_value);
 
     /// @dev create a lists of all auctions
     mapping(uint256 => auctions) private Auctions;
@@ -172,11 +199,11 @@ contract BlindAuction {
 
 
     modifier onlyBefore(uint256 _time) {
-        require(block.timestamp < _time);
+        require(block.timestamp < _time,"After time");
         _;
     }
     modifier onlyAfter(uint256 _time) {
-        require(block.timestamp > _time);
+        require(block.timestamp > _time,"before time");
         _;
     }
 
@@ -190,7 +217,7 @@ contract BlindAuction {
     }
 
     modifier alreadyBidder(uint256 auction_id) {
-        require(Auctions[auction_id].bidded[msg.sender], "Didn't place a bet,no point in revealing the bid");
+        require(Auctions[auction_id].bidded[msg.sender] == true , "Didn't place a bet,no point in revealing the bid");
         _;
     }
     
@@ -201,6 +228,10 @@ contract BlindAuction {
     }
        modifier auctionActive(uint256 auction_id){
         require(Auctions[auction_id].ended == false, "Auction already ended");
+        _;
+    }
+    modifier auctionEnded(uint256 auction_id){
+        require(Auctions[auction_id].ended == true ,"Cant Ask refund,auction not ended");
         _;
     }
     
@@ -287,6 +318,7 @@ contract BlindAuction {
     /// @param blindedBid is the hashed version of bid 
     /// @param auction_id is the id of the auction
     function bid(bytes32 blindedBid,uint256 auction_id)
+
         external
         payable
         onlyBefore(Auctions[auction_id].biddingEnd)
@@ -298,6 +330,7 @@ contract BlindAuction {
             msg.value
 
         );
+        Auctions[auction_id].bidded[msg.sender] = true;
         emit BidMade(msg.sender);
 
     }
@@ -306,13 +339,12 @@ contract BlindAuction {
     /// @dev correctly blinded invalid bids and for all bids except for
     /// @dev the totally highest.
     /// @param value value of the bid
-    /// @param fake not sure what fake is for 
     /// @param secret again not sure 
     /// @param auction_id id of the auction
     function reveal(
         uint256 value,
-        bool fake,
-        bytes32 secret,
+        //bool fake,
+        string calldata  secret,
         uint256 auction_id
     )
         external
@@ -329,25 +361,30 @@ contract BlindAuction {
             Bid storage bidToCheck = Auctions[auction_id].bids[msg.sender];
 
             // improper revealing 
-            if (bidToCheck.bidHash != keccak256(abi.encodePacked(value, fake, secret))) {
+            if (bidToCheck.bidHash != keccak256(abi.encode(value,  secret))) {
                 // Bid was not actually revealed.
                 // Do not refund deposit.
+                emit BidRevealFailed(auction_id,msg.sender);
             
             }
             else
             {
             refund += bidToCheck.deposit;
-            if (!fake && bidToCheck.deposit >= value) {
+            if (bidToCheck.deposit >= value) {
                 if (placeBid(auction_id,msg.sender, value))
                     refund -= value;
+                emit BidRevealed(auction_id,msg.sender);
+
             }
+            else
+            emit DepositNotEnough(auction_id,msg.sender);
             }
             // Make it impossible for the sender to re-claim
             // the same deposit.
             bidToCheck.bidHash = bytes32(0);
-        
+        emit BalanceRefunded(auction_id,msg.sender,refund);
         msg.sender.transfer(refund);
-        emit BidRevealed(auction_id,msg.sender,success);
+        //emit BidRevealed(auction_id,msg.sender,success);
     }
 
     
@@ -371,6 +408,7 @@ contract BlindAuction {
         }
         Auctions[auction_id].highestBid = value;
         Auctions[auction_id].highestBidder = bidder;
+        emit NewHighestBid(auction_id,bidder,value);
         return true;
     }
 
@@ -378,14 +416,18 @@ contract BlindAuction {
     ///@dev function to withdraw overbid/non-winning bids
     ///@param auction_id is the id of the Auction
     function withdraw(uint256 auction_id) 
+    auctionEnded(auction_id)
+    
     external
      {
-        emit BidderWithdrawn(auction_id,msg.sender, Auctions[auction_id].pendingReturns[msg.sender]);
+        //emit BidderRefunded(auction_id,msg.sender, Auctions[auction_id].pendingReturns[msg.sender]);
         if (Auctions[auction_id].pendingReturns[msg.sender] > 0) {
             uint256 value = Auctions[auction_id].pendingReturns[msg.sender];
             Auctions[auction_id].pendingReturns[msg.sender] = 0;
             address payable payable_sender = msg.sender;
             payable_sender.transfer(value);
+            emit BidderRefunded(auction_id,msg.sender, Auctions[auction_id].pendingReturns[msg.sender]);
+
         }
     }
 
