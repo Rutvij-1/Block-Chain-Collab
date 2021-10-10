@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 
 /// @title The contract for buying and selling items on a market
-contract VickreyAuction {
+contract VickreyAuction2 {
 
     // Important Structures
     
