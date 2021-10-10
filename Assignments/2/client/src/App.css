@@ -75,3 +75,8 @@ h5 {
 body {
   background-color:rgb(213, 232, 235)
 }
+.card-img-top {
+  width: 100%;
+  height: 15vw;
+  object-fit: cover;
+}

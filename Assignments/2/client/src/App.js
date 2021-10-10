@@ -1,10 +1,13 @@
 import React, { Component } from "react";
+import { Card, Button, Spinner, CardGroup, Table, InputGroup } from "react-bootstrap";
 import VickreyAuction2 from "./contracts/VickreyAuction2.json"
 import BlindAuction from "./contracts/BlindAuction.json"
 import getWeb3 from "./getWeb3";
 import NavBar from "./components/navbar";
 import MarketPlace from "./components/listmarket";
+import ListAuctionItem from "./components/listItem";
 import "./App.css";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 class App extends Component {
     constructor(props) {
@@ -20,15 +23,17 @@ class App extends Component {
             average_contract: null,
             listings: [],
             showlistings: false,
+            showcreate: false,
             formData: {}
         };
 
         this.activeListings = this.activeListings.bind(this);
         this.init = this.init.bind(this);
         this.cancelAuction = this.cancelAuction.bind(this);
-        this.onClickBid = this.onClickBid.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.createAuction = this.createAuction.bind(this);
+        this.placeBid = this.placeBid.bind(this);
+        this.showcreate = this.showcreate.bind(this);
     }
 
     componentDidMount = async () => {
@@ -74,19 +79,9 @@ class App extends Component {
     };
 
     init = async () => {
-        if (this.state.initialised == false)
+        if (this.state.initialised === false)
             return
         const { accounts, vickrey_contract, web3 } = this.state;
-
-        // await contract.methods.auctionItem("Book",
-        // 	"Harry Potter and the Philosopher's Stone",100,10000
-        // ).send({ from: accounts[0] });
-        // await contract.methods.auctionItem("Mobile Phone", "One Plus 5T",100,111010).send({from:accounts[0]});
-        // await contract.methods.createListings(20000, "Mobile Phone", "One Plus 5T").send({ from: accounts[0] });
-        // await contract.methods.createListings(3500,"Netflix screen","3 Screens, FHD").send({ from: accounts[0] });
-        // await contract.methods.set(10).send({ from: accounts[0] });
-
-        // const response = await contract.methods.get().call();
         const response = await web3.eth.getBalance(accounts[0]);
         // Update state with the result.
         console.log(response);
@@ -101,15 +96,23 @@ class App extends Component {
         let temp = await vickrey_contract.methods.getactiveauctions().call();
         let ret = await blind_contract.methods.getactiveauctions().call();
         temp = temp.concat(ret)
-        console.log(temp);
+        // console.log(temp);
         this.setState({ listings: temp, showlistings: !showlistings });
     };
 
-    onClickBid = async () => {
-
+    showcreate(e) {
+        e.preventDefault();
+        this.setState({ showcreate: !this.state.showcreate });
     };
+
     cancelAuction = async () => {
 
+    };
+
+    placeBid(e) {
+        e.preventDefault();
+        console.log(this.state.formData);
+        const { deposit, secret } = this.state.formData
     };
 
     createAuction(e) {
@@ -125,124 +128,59 @@ class App extends Component {
             vickrey_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
                 .send({ from: accounts[0] });
         }
-        else {
-            average_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
-                .send({ from: accounts[0] });
-        }
-    };
 
-    handleChange(e) {
-        e.preventDefault();
-        const formData = Object.assign({}, this.state.formData);
-        formData[e.target.id] = e.target.value;
-        this.setState({ formData: formData });
-    }
-    render() {
-        if (!this.state.web3) {
-            return <div>Loading Web3, accounts, and contract...</div>;
+        handleChange(e) {
+            e.preventDefault();
+            const formData = Object.assign({}, this.state.formData);
+            formData[e.target.id] = e.target.value;
+            this.setState({ formData: formData });
         }
-        return (
-            <div className="App">
-                <NavBar />
-                <h1>Smart Contract - Auction</h1>
-                <button onClick={this.activeListings}>
-                    Show Active Listings
-                </button>
-                {this.state.showlistings ?
-                    <>
-                        <div>The active listings are:</div>
-                        <div style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                        }}>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <td>Auction ID</td>
-                                        <td>Item Name</td>
-                                        <td>Item Description</td>
-                                        <td>Bidding Time</td>
-                                        <td>Bid Reveal Time</td>
-                                        <td>Sold</td>
-                                        {/* <td>Seller</td>
-              <td>Buyer</td>
-              <td>Price</td>
-              <td>Buyer Alloted</td> */}
-                                        <td>Status</td>
-                                        <td>Bid</td>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {this.state.listings.map(listing => {
-                                        let status = 'Active'
-                                        let sold = "False"
-                                        if (listing.ended) {
-                                            status = 'Ended'
-                                            sold = "True"
-                                        }
-                                        return (
-                                            <tr key={listing.auction_id}>
-                                                <td>{listing.auction_id}</td>
-                                                <td>{listing.item_name}</td>
-                                                <td>{listing.item_description}</td>
-                                                <td>{listing.biddingEnd}</td>
-                                                <td>{listing.revealEnd}</td>
-                                                <td>{sold}</td>
-                                                <td>{status}</td>
-                                                <td>
-                                                    {listing.owner == this.state.currentAccount && (status === 'Active' || status === 'Unstarted') ?
-                                                        <button onClick={() => this.cancelAuction(listing)}>Cancel</button>
-                                                        :
-                                                        <div>
-                                                            <input ref={x => this._inputBidAmount = x} />
-                                                            <button onClick={() => this.onClickBid(listing)}>Bid</button>
-                                                        </div>
-                                                    }
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </>
-                    :
-                    <div>
-                        <h1>Auctions</h1>
-                        <div className="form-create-auction">
-                            <form onSubmit={this.createAuction}>
-                                <h2>Create auction</h2>
-                                <div>
-                                    Item Name<br /> <input type="item_name" className="form-control" id="item_name" required onChange={this.handleChange} placeholder="Item Name" />
-                                </div>
-                                <div>
-                                    Item description <br /><input type="item_description" className="form-control" id="item_description" required onChange={this.handleChange} placeholder="Item description" />
-                                </div>
-                                <div>
-                                    Bidding Time<br /> <input type="bidding_time" className="form-control" id="bidding_time" required onChange={this.handleChange} placeholder={100} />
-                                </div>
-                                <div>
-                                    Reveal Time<br /> <input type="reveal_time" className="form-control" id="reveal_time" required onChange={this.handleChange} placeholder={100} />
-                                </div>
-                                <div>
-                                    Auction Type <br />
-                                    <select id="auctionType" placeholder="Select Auction Type" required onChange={this.handleChange}>
-                                        <option value="Select Type" disabled="disabled" selected>Select Type</option>
-                                        <option value="Blind Auction">Blind Auction</option>
-                                        <option value="Vickrey Auction">Vickrey Auction</option>
-                                        <option value="Average Price Auction">Average Price Auction</option>
-                                    </select>
-                                </div>
-                                <br />
-                                <button type="submit">Create Auction</button>
-                            </form>
-                        </div>
-                    </div>
-                }
-            </div>
-        );
+        render() {
+            if (!this.state.web3) {
+
+                return <div><Spinner animation="border" />
+                    Loading Web3, accounts, and contract...</div>;
+            }
+            return (
+                <div className="App">
+                    <NavBar />
+                    <h1>Smart Contract - Auction</h1>
+                    {(!this.state.showcreate && !this.state.showlistings) &&
+                        <CardGroup>
+                            <Card style={{ width: '18rem' }}>
+                                <Card.Img variant="top" src="auctionhouse.png" alt="te" />
+                                <Card.Body>
+                                    <Card.Title>Auction House</Card.Title>
+                                    <Card.Text>
+                                        Have a look at the active listings in the auction house!
+                                    </Card.Text>
+                                    <Button variant="success" onClick={this.activeListings}>Go to Auction House</Button>
+                                </Card.Body>
+                            </Card>
+                            <Card style={{ width: '18rem' }}>
+                                <Card.Img variant="top" src="listitem.png" alt="te" />
+                                <Card.Body>
+                                    <Card.Title>Create Auction Listing</Card.Title>
+                                    <Card.Text>
+                                        Add your own listing to the auctions!
+                                    </Card.Text>
+                                    <Button variant="warning" onClick={this.showcreate}>List your item</Button>
+                                </Card.Body>
+                            </Card>
+                        </CardGroup>
+                    }
+                    {this.state.showlistings &&
+
+                        <MarketPlace account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} />
+                    }
+                    {
+                        this.state.showcreate &&
+                        <ListAuctionItem handleSubmit={this.createAuction} handleChange={this.handleChange} />
+                    }
+
+                </div>
+            );
+        }
     }
-}
 
 export default App;

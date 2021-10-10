@@ -287,7 +287,6 @@ contract BlindAuction {
     /// @param blindedBid is the hashed version of bid 
     /// @param auction_id is the id of the auction
     function bid(bytes32 blindedBid,uint256 auction_id)
-
         external
         payable
         onlyBefore(Auctions[auction_id].biddingEnd)
