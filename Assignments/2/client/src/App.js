@@ -39,24 +39,30 @@ class App extends Component {
       // Use web3 to get the user's accounts.
       const accounts = await web3.eth.getAccounts();
       console.log(accounts);
-      // Get the contract instance.
+      // Get the contract instances.
       const networkId = await web3.eth.net.getId();
       const deployedNetwork1 = VickreyAuction2.networks[networkId];
-      const deployedNetwork2 = BlindAuction.networks[networkId];
       const instance1 = await new web3.eth.Contract(
         VickreyAuction2.abi,
         deployedNetwork1 && deployedNetwork1.address,
       );
+      instance1.options.address = deployedNetwork1.address
+
+      const deployedNetwork2 = BlindAuction.networks[networkId];
       const instance2 = await new web3.eth.Contract(
         BlindAuction.abi,
         deployedNetwork2 && deployedNetwork2.address,
       );
-      console.log(accounts,deployedNetwork1.address, deployedNetwork2.address);
-      instance1.options.address = deployedNetwork1.address
       instance2.options.address = deployedNetwork2.address
+      console.log(accounts,deployedNetwork1.address, deployedNetwork2.address);
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, vickrey_contract: instance1, blind_contract: instance2, initialised: true, cur_account: accounts[0] }, this.init);
+      this.setState({ web3, accounts, 
+        vickrey_contract: instance1, 
+        blind_contract: instance2, 
+        initialised: true, 
+        currentAccount: accounts[0] 
+      }, this.init);
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -111,13 +117,16 @@ class App extends Component {
     const { item_name,item_description,bidding_time,reveal_time, auctionType } = this.state.formData;
     console.log(this.state.formData);
     if(auctionType === "Blind Auction"){
-      blind_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time).send({ from: accounts[0] });
+      blind_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
+      .send({ from: accounts[0] });
     }
     else if(auctionType === "Vickrey Auction"){
-      vickrey_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time).send({ from: accounts[0] });
+      vickrey_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
+      .send({ from: accounts[0] });
     }
     else{
-      average_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time).send({ from: accounts[0] });
+      average_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
+      .send({ from: accounts[0] });
     }
   };
 
@@ -141,14 +150,19 @@ class App extends Component {
         {this.state.showlistings ?
         <>
         <div>The active listings are:</div>
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}>
         <table>
           <thead>
             <tr>
               <td>Auction ID</td>
               <td>Item Name</td>
               <td>Item Description</td>
-              <td>biddingEnd</td>
-              <td>revealEnd</td>
+              <td>Bidding Time</td>
+              <td>Bid Reveal Time</td>
               <td>Sold</td>
               {/* <td>Seller</td>
               <td>Buyer</td>
@@ -161,8 +175,10 @@ class App extends Component {
           <tbody>
             {this.state.listings.map(listing => {
               let status = 'Active'
+              let sold = "False"
               if (listing.ended) {
                   status = 'Ended'
+                  sold = "True"
               } 
               return (
                 <tr key={listing.auction_id}>
@@ -170,8 +186,8 @@ class App extends Component {
                   <td>{listing.item_name}</td>
                   <td>{listing.item_description}</td>
                   <td>{listing.biddingEnd}</td>
-                  <td>{listing.revealEnd} ETH</td>
-                  <td>{listing.ended} ETH</td>
+                  <td>{listing.revealEnd}</td>
+                  <td>{sold}</td>
                   <td>{status}</td>
                   <td>
                     {listing.owner == this.state.currentAccount && (status === 'Active' || status === 'Unstarted') ?
@@ -188,6 +204,7 @@ class App extends Component {
           })}
           </tbody>
         </table>
+        </div>
         </>
         :
         <div>
@@ -196,21 +213,20 @@ class App extends Component {
             <form onSubmit={this.createAuction}>
               <h2>Create auction</h2>
               <div>
-                  Item Name<br/> <input type="item_name" className="form-control" id="item_name" required onChange={this.handleChange} defaultValue={"Item Name"} />
-                  {/* Item<input type="text" ref={x => this.state.item_desc = x} defaultValue={100000000000000000} /> */}
+                  Item Name<br/> <input type="item_name" className="form-control" id="item_name" required onChange={this.handleChange} placeholder="Item Name" />
               </div>
               <div>
-                  Item description <br/><input type="item_description" className="form-control" id="item_description" required onChange={this.handleChange} defaultValue={"Item description"} />
+                  Item description <br/><input type="item_description" className="form-control" id="item_description" required onChange={this.handleChange} placeholder="Item description" />
               </div>
               <div>
-                  Bidding Time<br/> <input type="bidding_time" className="form-control" id="bidding_time" required onChange={this.handleChange} defaultValue={100} />
+                  Bidding Time<br/> <input type="bidding_time" className="form-control" id="bidding_time" required onChange={this.handleChange} placeholder={100} />
               </div>
               <div>
-              Reveal Time<br/> <input type="reveal_time" className="form-control" id="reveal_time" required onChange={this.handleChange} defaultValue={100} />
+              Reveal Time<br/> <input type="reveal_time" className="form-control" id="reveal_time" required onChange={this.handleChange} placeholder={100} />
               </div>
               <div>
                 Auction Type <br/>
-                <select id="auctionType" defaultValue={"Blind Auction"} required onChange={this.handleChange}>
+                <select id="auctionType" placeholder="Select Auction Type" required onChange={this.handleChange}>
                   <option value="Blind Auction">Blind Auction</option>
                   <option value="Vickrey Auction">Vickrey Auction</option>
                   <option value="Average Price Auction">Average Price Auction</option>
