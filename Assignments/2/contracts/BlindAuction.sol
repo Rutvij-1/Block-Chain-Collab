@@ -55,7 +55,7 @@ contract BlindAuction {
 
     struct auction_listings {
         uint256 auction_id;
-        //address payable beneficiary;
+        address payable beneficiary;
         uint256 biddingEnd;
         uint256 revealEnd;
         bool ended;
@@ -297,6 +297,7 @@ contract BlindAuction {
                 auctions storage currentauction = Auctions[i];
                 active_auctions[currentIndex] = auction_listings(
                     currentauction.auction_id,
+                    currentauction.beneficiary,
                     currentauction.biddingEnd,
                     currentauction.revealEnd,
                     currentauction.ended,
