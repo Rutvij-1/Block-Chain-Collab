@@ -17,10 +17,21 @@ class MarketPlace extends Component {
     }
     componentDidMount = async () => {
         try {
-            let temp = await this.props.vickrey_contract.methods.getactiveauctions().call();
-            let ret = await this.props.blind_contract.methods.getactiveauctions().call();
-            temp = temp.concat(ret)
-            this.setState({ listings: temp, currentAccount: this.props.account });
+            let offSet = 1000;
+            let blindAuctions = await this.props.blind_contract.methods.getactiveauctions().call();
+            for (let i = 0; i < blindAuctions.length; ++i) {
+                blindAuctions[i]["type"] = "Blind Auction";
+                blindAuctions[i]["auction_id"] = parseInt(blindAuctions[i]["auction_id"]) + offSet;
+            }
+            offSet += blindAuctions.length;
+            let vikreyAuctions = await this.props.vickrey_contract.methods.getactiveauctions().call();
+            for (let i = 0; i < vikreyAuctions.length; ++i) {
+                vikreyAuctions[i]["type"] = "Vikrey Auction";
+                vikreyAuctions[i]["auction_id"] = parseInt(vikreyAuctions[i]["auction_id"]) + offSet;
+            }
+            offSet += vikreyAuctions.length;
+            let auctions = blindAuctions.concat(vikreyAuctions)
+            this.setState({ listings: auctions, currentAccount: this.props.account });
 
         } catch (error) {
             alert(`Loading...`);
@@ -79,7 +90,7 @@ class MarketPlace extends Component {
                                         {/* <td>{sold}</td> */}
                                         {/* <td>{status}</td> */}
                                         <td>
-                                            {listing.owner === this.state.currentAccount && (status === 'Active' || status === 'Unstarted') ?
+                                            {listing.beneficiary === this.state.currentAccount && (status === 'Active' || status === 'Unstarted') ?
                                                 <Button onClick={() => this.cancelAuction(listing)}>Cancel</Button>
                                                 :
                                                 <div>
