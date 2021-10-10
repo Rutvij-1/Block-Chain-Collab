@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import VickreyAuction2 from "./contracts/VickreyAuction2.json"
+import BlindAuction from "./contracts/BlindAuction.json"
 import getWeb3 from "./getWeb3";
 import NavBar from "./components/navbar";
 import MarketPlace from "./components/listmarket";
@@ -14,7 +15,9 @@ class App extends Component {
     web3: null, 
     accounts: null, 
     currentAccount: null,
-    contract: null,
+    blind_contract: null,
+    vickrey_contract: null,
+    average_contract: null,
     listings: [],
     showlistings: false,
     formData: {}
@@ -38,16 +41,22 @@ class App extends Component {
       console.log(accounts);
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = VickreyAuction2.networks[networkId];
-      const instance = await new web3.eth.Contract(
+      const deployedNetwork1 = VickreyAuction2.networks[networkId];
+      const deployedNetwork2 = BlindAuction.networks[networkId];
+      const instance1 = await new web3.eth.Contract(
         VickreyAuction2.abi,
-        deployedNetwork && deployedNetwork.address,
+        deployedNetwork1 && deployedNetwork1.address,
       );
-      console.log(accounts,deployedNetwork.address);
-      instance.options.address = deployedNetwork.address
+      const instance2 = await new web3.eth.Contract(
+        BlindAuction.abi,
+        deployedNetwork2 && deployedNetwork2.address,
+      );
+      console.log(accounts,deployedNetwork1.address, deployedNetwork2.address);
+      instance1.options.address = deployedNetwork1.address
+      instance2.options.address = deployedNetwork2.address
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance, initialised: true, cur_account: accounts[0] }, this.init);
+      this.setState({ web3, accounts, vickrey_contract: instance1, blind_contract: instance2, initialised: true, cur_account: accounts[0] }, this.init);
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -60,7 +69,7 @@ class App extends Component {
   init = async () => {
     if(this.state.initialised == false)
     return
-    const { accounts, contract, web3 } = this.state;
+    const { accounts, vickrey_contract, web3 } = this.state;
 
     // await contract.methods.auctionItem("Book",
 		// 	"Harry Potter and the Philosopher's Stone",100,10000
@@ -78,11 +87,13 @@ class App extends Component {
   };
 
   activeListings = async() => {
-    const { accounts, contract, showlistings } = this.state;
+    const { accounts, vickrey_contract, blind_contract, showlistings } = this.state;
     console.log(accounts);
 		// await contract.methods.createListings(20010, "Mobile Phone", "One Plus 5T");
 		// await contract.methods.createListings(20011, "Mobile Phone", "One Plus 5T").call();
-    let temp = await contract.methods.getactiveauctions().call();
+    let temp = await vickrey_contract.methods.getactiveauctions().call();
+    let ret = await blind_contract.methods.getactiveauctions().call();
+    temp = temp.concat(ret)
     console.log(temp);
     this.setState({ listings:temp, showlistings:!showlistings });
   };
@@ -96,10 +107,18 @@ class App extends Component {
 
   createAuction(e) {
     e.preventDefault();
-    const { accounts, contract } = this.state;
-    const { item_name,item_description,bidding_time,reveal_time } = this.state.formData;
+    const { accounts, blind_contract, vickrey_contract, average_contract  } = this.state;
+    const { item_name,item_description,bidding_time,reveal_time, auctionType } = this.state.formData;
     console.log(this.state.formData);
-    contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time).send({ from: accounts[0] });
+    if(auctionType === "Blind Auction"){
+      blind_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time).send({ from: accounts[0] });
+    }
+    else if(auctionType === "Vickrey Auction"){
+      vickrey_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time).send({ from: accounts[0] });
+    }
+    else{
+      average_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time).send({ from: accounts[0] });
+    }
   };
 
   handleChange(e) {
@@ -114,8 +133,7 @@ class App extends Component {
     }
     return (
       <div className="App">
-         
-        {/* <NavBar/> */}
+        <NavBar/>
         <h1>Smart Contract - Auction</h1>
         <button onClick={this.activeListings}>
           Show Active Listings
@@ -124,76 +142,85 @@ class App extends Component {
         <>
         <div>The active listings are:</div>
         <table>
-            <thead>
-                <tr>
-                    <td>Auction ID</td>
-                    <td>Item Name</td>
-                    <td>Item Description</td>
-                    <td>biddingEnd</td>
-                    <td>revealEnd</td>
-                    <td>Sold</td>
-                    {/* <td>Seller</td>
-                    <td>Buyer</td>
-                    <td>Price</td>
-                    <td>Buyer Alloted</td> */}
-                    <td>Status</td>
-                    <td>Bid</td>
-                </tr>
-            </thead>
-            <tbody>
+          <thead>
+            <tr>
+              <td>Auction ID</td>
+              <td>Item Name</td>
+              <td>Item Description</td>
+              <td>biddingEnd</td>
+              <td>revealEnd</td>
+              <td>Sold</td>
+              {/* <td>Seller</td>
+              <td>Buyer</td>
+              <td>Price</td>
+              <td>Buyer Alloted</td> */}
+              <td>Status</td>
+              <td>Bid</td>
+            </tr>
+          </thead>
+          <tbody>
             {this.state.listings.map(listing => {
-                let status = 'Active'
-                if (listing.ended) {
-                    status = 'Ended'
-                } 
-                return (
-                    <tr key={listing.auction_id}>
-                        <td>{listing.auction_id}</td>
-                        <td>{listing.item_name}</td>
-                        <td>{listing.item_description}</td>
-                        <td>{listing.biddingEnd}</td>
-                        <td>{listing.revealEnd} ETH</td>
-                        <td>{listing.ended} ETH</td>
-                        <td>{status}</td>
-                        <td>
-                            {listing.owner == this.state.currentAccount && (status === 'Active' || status === 'Unstarted') ?
-                                <button onClick={() => this.cancelAuction(listing)}>Cancel</button>
-                                :
-                            <div>
-                                <input ref={x => this._inputBidAmount = x} />
-                                <button onClick={() => this.onClickBid(listing)}>Bid</button>
-                            </div>
-                          }
-                        </td>
-                    </tr>
-                )
-            })}
-            </tbody>
+              let status = 'Active'
+              if (listing.ended) {
+                  status = 'Ended'
+              } 
+              return (
+                <tr key={listing.auction_id}>
+                  <td>{listing.auction_id}</td>
+                  <td>{listing.item_name}</td>
+                  <td>{listing.item_description}</td>
+                  <td>{listing.biddingEnd}</td>
+                  <td>{listing.revealEnd} ETH</td>
+                  <td>{listing.ended} ETH</td>
+                  <td>{status}</td>
+                  <td>
+                    {listing.owner == this.state.currentAccount && (status === 'Active' || status === 'Unstarted') ?
+                        <button onClick={() => this.cancelAuction(listing)}>Cancel</button>
+                        :
+                      <div>
+                        <input ref={x => this._inputBidAmount = x} />
+                        <button onClick={() => this.onClickBid(listing)}>Bid</button>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              )
+          })}
+          </tbody>
         </table>
         </>
         :
-         <div>
-            <h1>Auctions</h1>
-            <div className="form-create-auction">
-              <form onSubmit={this.createAuction}>
-                <h2>Create auction</h2>
-                <div>
-                    Item Name <input type="item_name" className="form-control" id="item_name" required onChange={this.handleChange} defaultValue={"Item Name"} />
-                    {/* Item<input type="text" ref={x => this.state.item_desc = x} defaultValue={100000000000000000} /> */}
-                </div>
-                <div>
-                    Item description <input type="item_description" className="form-control" id="item_description" required onChange={this.handleChange} defaultValue={"Item description"} />
-                </div>
-                <div>
-                    Bidding Time <input type="bidding_time" className="form-control" id="bidding_time" required onChange={this.handleChange} defaultValue={100} />
-                </div>
-                <div>
-                Reveal Time <input type="reveal_time" className="form-control" id="reveal_time" required onChange={this.handleChange} defaultValue={100} />
-                </div>
-                <button type="submit">Create Auction</button>
-              </form>
-            </div>
+        <div>
+          <h1>Auctions</h1>
+          <div className="form-create-auction">
+            <form onSubmit={this.createAuction}>
+              <h2>Create auction</h2>
+              <div>
+                  Item Name<br/> <input type="item_name" className="form-control" id="item_name" required onChange={this.handleChange} defaultValue={"Item Name"} />
+                  {/* Item<input type="text" ref={x => this.state.item_desc = x} defaultValue={100000000000000000} /> */}
+              </div>
+              <div>
+                  Item description <br/><input type="item_description" className="form-control" id="item_description" required onChange={this.handleChange} defaultValue={"Item description"} />
+              </div>
+              <div>
+                  Bidding Time<br/> <input type="bidding_time" className="form-control" id="bidding_time" required onChange={this.handleChange} defaultValue={100} />
+              </div>
+              <div>
+              Reveal Time<br/> <input type="reveal_time" className="form-control" id="reveal_time" required onChange={this.handleChange} defaultValue={100} />
+              </div>
+              <div>
+                Auction Type <br/>
+                <select id="auctionType" defaultValue={"Blind Auction"} required onChange={this.handleChange}>
+                  <option value="Blind Auction">Blind Auction</option>
+                  <option value="Vickrey Auction">Vickrey Auction</option>
+                  <option value="Average Price Auction">Average Price Auction</option>
+                </select>
+              </div>
+              <br/>
+              <button type="submit">Create Auction</button>
+            </form>
           </div>
+        </div>
         }
       </div>
     );
