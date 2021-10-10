@@ -128,59 +128,64 @@ class App extends Component {
             vickrey_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
                 .send({ from: accounts[0] });
         }
-
-        handleChange(e) {
-            e.preventDefault();
-            const formData = Object.assign({}, this.state.formData);
-            formData[e.target.id] = e.target.value;
-            this.setState({ formData: formData });
+        else {
+            average_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
+                .send({ from: accounts[0] });
         }
-        render() {
-            if (!this.state.web3) {
+    };
 
-                return <div><Spinner animation="border" />
-                    Loading Web3, accounts, and contract...</div>;
-            }
-            return (
-                <div className="App">
-                    <NavBar />
-                    <h1>Smart Contract - Auction</h1>
-                    {(!this.state.showcreate && !this.state.showlistings) &&
-                        <CardGroup>
-                            <Card style={{ width: '18rem' }}>
-                                <Card.Img variant="top" src="auctionhouse.png" alt="te" />
-                                <Card.Body>
-                                    <Card.Title>Auction House</Card.Title>
-                                    <Card.Text>
-                                        Have a look at the active listings in the auction house!
-                                    </Card.Text>
-                                    <Button variant="success" onClick={this.activeListings}>Go to Auction House</Button>
-                                </Card.Body>
-                            </Card>
-                            <Card style={{ width: '18rem' }}>
-                                <Card.Img variant="top" src="listitem.png" alt="te" />
-                                <Card.Body>
-                                    <Card.Title>Create Auction Listing</Card.Title>
-                                    <Card.Text>
-                                        Add your own listing to the auctions!
-                                    </Card.Text>
-                                    <Button variant="warning" onClick={this.showcreate}>List your item</Button>
-                                </Card.Body>
-                            </Card>
-                        </CardGroup>
-                    }
-                    {this.state.showlistings &&
-
-                        <MarketPlace account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} />
-                    }
-                    {
-                        this.state.showcreate &&
-                        <ListAuctionItem handleSubmit={this.createAuction} handleChange={this.handleChange} />
-                    }
-
-                </div>
-            );
-        }
+    handleChange(e) {
+        e.preventDefault();
+        const formData = Object.assign({}, this.state.formData);
+        formData[e.target.id] = e.target.value;
+        this.setState({ formData: formData });
     }
+    render() {
+        if (!this.state.web3) {
+
+            return <div><Spinner animation="border" />
+                Loading Web3, accounts, and contract...</div>;
+        }
+        return (
+            <div className="App">
+                <NavBar />
+                <h1>Smart Contract - Auction</h1>
+                {(!this.state.showcreate && !this.state.showlistings) &&
+                    <CardGroup>
+                        <Card style={{ width: '18rem' }}>
+                            <Card.Img variant="top" src="auctionhouse.png" alt="te" />
+                            <Card.Body>
+                                <Card.Title>Auction House</Card.Title>
+                                <Card.Text>
+                                    Have a look at the active listings in the auction house!
+                                </Card.Text>
+                                <Button variant="success" onClick={this.activeListings}>Go to Auction House</Button>
+                            </Card.Body>
+                        </Card>
+                        <Card style={{ width: '18rem' }}>
+                            <Card.Img variant="top" src="listitem.png" alt="te" />
+                            <Card.Body>
+                                <Card.Title>Create Auction Listing</Card.Title>
+                                <Card.Text>
+                                    Add your own listing to the auctions!
+                                </Card.Text>
+                                <Button variant="warning" onClick={this.showcreate}>List your item</Button>
+                            </Card.Body>
+                        </Card>
+                    </CardGroup>
+                }
+                {this.state.showlistings &&
+
+                    <MarketPlace account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} />
+                }
+                {
+                    this.state.showcreate &&
+                    <ListAuctionItem handleSubmit={this.createAuction} handleChange={this.handleChange} />
+                }
+
+            </div>
+        );
+    }
+}
 
 export default App;
