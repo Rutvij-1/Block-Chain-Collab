@@ -14,7 +14,6 @@ class AuctionHouse extends Component {
 		this.makeBid = this.makeBid.bind(this);
 		this.endAuction = this.endAuction.bind(this);
 		this.revealBid = this.revealBid.bind(this);
-		this.withdrawDeposit = this.withdrawDeposit.bind(this);
 	}
 	componentDidMount = async () => {
 		try {
@@ -119,20 +118,37 @@ class AuctionHouse extends Component {
 				console.log(error);
 			}
 		}
-	}
-  endAuction = (auction_id, type) => (e) => {
-    e.preventDefault();
-    let listing = this.state.listings[auction_id];
-    const { blind_contract, vickrey_contract, average_contract, currentAccount } = this.state
-    console.log(listing, type);
-    if(type === "Blind Auction") {
-		blind_contract.auctionEnd(auction_id).send({ from: currentAccount })
-    } else if(type === "Vikrey Auction") {
-		vickrey_contract.auctionEnd(auction_id).send({ from: currentAccount })
-    } else {
-		average_contract.auctionEnd(auction_id).send({ from: currentAccount })
-    }
-  };
+	window.location.reload(false);
+}
+
+	endAuction = (auction_id, type) => (e) => {
+		e.preventDefault();
+		const { blind_contract, vickrey_contract, average_contract } = this.state;
+		try {
+		  if (type === "Blind Auction") {
+			blind_contract.methods.auctionEnd(
+			  parseInt(auction_id)
+			).send({
+			  from: this.state.currentAccount
+			});
+		  } else if (type === "Vikrey Auction") {
+			vickrey_contract.methods.auctionEnd(
+			  parseInt(auction_id)
+			).send({
+			  from: this.state.currentAccount
+			});
+		  } else {
+			average_contract.methods.auctionEnd(
+			  parseInt(auction_id)
+			).send({
+			  from: this.state.currentAccount
+			});
+		  }
+		} catch (error) {
+		  console.log(error);
+		}
+	window.location.reload(false);
+};
 
   revealBid = (auction_id, type) => (e) => {
     e.preventDefault();
@@ -190,22 +206,8 @@ class AuctionHouse extends Component {
 			console.log(error);
 		}
 	}
-  };
-
-  withdrawDeposit = (auction_id, type) => (e) => {
-    e.preventDefault();
-    let listing = this.state.listings[auction_id];
-    const { blind_contract, vickrey_contract, average_contract } = this.state
-    console.log(listing, type);
-    if(type === "Blind Auction") {
-      // blind_contract.withdraw
-
-    } else if(type === "Vikrey Auction") {
-
-    } else {
-
-    }
-  };
+	window.location.reload(false);
+};
 
 	handleChange(e) {
 		e.preventDefault();

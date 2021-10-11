@@ -170,6 +170,7 @@ class App extends Component {
       average_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
         .send({ from: accounts[0] });
     }
+		window.location.reload(false);
   };
 
   handleChange(e) {
