@@ -61,6 +61,7 @@ contract BlindAuction {
         bool ended;
         string item_name;
         string item_description;
+        bool bidplaced;
 
         //bool sold;
         //address highestBidder;
@@ -302,7 +303,8 @@ contract BlindAuction {
                     currentauction.revealEnd,
                     currentauction.ended,
                     currentauction.item_name,
-                    currentauction.item_description
+                    currentauction.item_description,
+                    currentauction.bidded[msg.sender]
                 );
             }
             currentIndex += 1;
