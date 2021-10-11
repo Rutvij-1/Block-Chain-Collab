@@ -13,8 +13,10 @@ class MarketPlace extends Component {
     }
     this.handleChange = this.handleChange.bind(this);
     this.makeBid = this.makeBid.bind(this);
+    this.endAuction = this.endAuction.bind(this);
+    this.revealBid = this.revealBid.bind(this);
+    this.withdrawDeposit = this.withdrawDeposit.bind(this);
   }
-
   componentDidMount = async () => {
     try {
       let offSet = 1000;
@@ -51,6 +53,7 @@ class MarketPlace extends Component {
       console.error(error);
     }
   };
+
   makeBid = (auction_id, type) => e => {
     e.preventDefault();
     const { value, secret_key, deposit } = this.state.formData;
@@ -109,39 +112,58 @@ class MarketPlace extends Component {
       }
     }
   }
-
-  endAuction = (auction_id, type) => e => {
+  endAuction = (auction_id, type) => (e) => {
     e.preventDefault();
-    try {
-      if (type === "Blind Auction") {
-        this.props.blind_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      } else if (type === "Vikrey Auction") {
-        this.props.vickrey_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      } else {
-        this.props.average_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      }
-    } catch (error) {
-      console.log(error);
+    let listing = this.state.listings[auction_id];
+    const { blind_contract, vickrey_contract, average_contract } = this.state
+    console.log(listing, type);
+    if (type === "Blind Auction") {
+      // blind_contract.withdraw
+
+    } else if (type === "Vikrey Auction") {
+
+    } else {
+
     }
-  }
+  };
+
+  revealBid = (auction_id, type) => (e) => {
+    e.preventDefault();
+    let listing = this.state.listings[auction_id];
+    const { blind_contract, vickrey_contract, average_contract } = this.state
+    console.log(listing, type);
+    if (type === "Blind Auction") {
+      // blind_contract.reveal
+
+    } else if (type === "Vikrey Auction") {
+
+    } else {
+
+    }
+  };
+
+  withdrawDeposit = (auction_id, type) => (e) => {
+    e.preventDefault();
+    let listing = this.state.listings[auction_id];
+    const { blind_contract, vickrey_contract, average_contract } = this.state
+    console.log(listing, type);
+    if (type === "Blind Auction") {
+      // blind_contract.withdraw
+
+    } else if (type === "Vikrey Auction") {
+
+    } else {
+
+    }
+  };
+
   handleChange(e) {
     e.preventDefault();
     const formData = Object.assign({}, this.state.formData);
     formData[e.target.id] = e.target.value;
     this.setState({ formData: formData });
   };
+
   render() {
     return (
       <>
@@ -158,10 +180,8 @@ class MarketPlace extends Component {
                 <td>Auction Type</td>
                 <td>Item Name</td>
                 <td>Item Description</td>
-                <td>Bidding End</td>
-                <td>Reveal End</td>
-                {/* <td>Sold</td> */}
-                {/* <td>Status</td> */}
+                <td>Bidding Time</td>
+                <td>Bid Reveal Time</td>
                 <td>Manage</td>
               </tr>
             </thead>
@@ -169,6 +189,9 @@ class MarketPlace extends Component {
               {this.state.listings.map(listing => {
                 let status = 'Active'
                 let sold = "False"
+                if (Date.now() > listing.bidding_deadline) {
+                  status = 'Bidding Over'
+                }
                 if (listing.ended) {
                   status = 'Ended'
                   sold = "True"
@@ -181,24 +204,50 @@ class MarketPlace extends Component {
                     <td>{listing.item_description}</td>
                     <td>{listing.bidding_deadline.toTimeString()}</td>
                     <td>{listing.reveal_deadline.toTimeString()}</td>
-                    {/* <td>{sold}</td> */}
-                    {/* <td>{status}</td> */}
                     <td>
                       {listing.beneficiary === this.state.currentAccount ?
-                        <>
-                          {status === 'Ended' ?
-                            <Button onClick={() => this.endAuction(listing.auction_id, listing.type)}>End</Button> :
-                            <></>
-                          }
-                        </> :
-                        <div>
-                          <InputGroup>
-                            <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
-                            <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-                            <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount" />
-                          </InputGroup>
-                          <Button className="success" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
-                        </div>
+                        (status === 'Ended') ?
+                          <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="secondary">End Auction</Button>
+                          :
+                          <Button variant="success">Active</Button>
+                        :
+                        (status === 'Active') ?
+                          <>
+                            {listing.bidplaced === true ?
+                              <div>
+                                <Button variant="info" disabled>Bid Placed</Button>
+                              </div>
+                              :
+                              <div>
+                                <InputGroup>
+                                  <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
+                                  <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
+                                  <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount" />
+                                </InputGroup>
+                                <Button variant="warning" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
+                              </div>
+                            }
+                          </>
+                          :
+                          (status === 'Bidding Over') ?
+                            <>
+                              {listing.bidplaced === true ?
+                                <Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
+                                :
+                                <Button variant="warning" disabled>Bidding Time Over</Button>
+                              }
+                            </>
+                            :
+                            (status === 'Ended') ?
+                              <>
+                                {listing.bidplaced === true ?
+                                  <Button variant="info" onClick={this.withdrawDeposit(listing.auction_id, listing.type)}>Withdraw Bid</Button>
+                                  :
+                                  <Button variant="warning" disabled>Auction Ended</Button>
+                                }
+                              </>
+                              :
+                              <> </>
                       }
                     </td>
                   </tr>
