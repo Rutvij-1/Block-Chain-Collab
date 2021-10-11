@@ -33,7 +33,7 @@ class MarketPlace extends Component {
         vikreyAuctions[i]["bidding_deadline"] = new Date(vikreyAuctions[i]["biddingEnd"] * 1000);
         vikreyAuctions[i]["reveal_deadline"] = new Date(vikreyAuctions[i]["revealEnd"] * 1000);
       }
-      let auctions = blindAuctions.concat(vikreyAuctions);
+      // let auctions = blindAuctions.concat(vikreyAuctions);
       offSet += vikreyAuctions.length;
       let averageAuctions = await this.props.average_contract.methods.getactiveauctions().call();
       for (let i = 0; i < averageAuctions.length; ++i) {
