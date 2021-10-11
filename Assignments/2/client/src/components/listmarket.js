@@ -11,7 +11,8 @@ class MarketPlace extends Component {
       formData: {}
     }
     this.handleChange = this.handleChange.bind(this);
-    this.makeBid = this.makeBid.bind(this);
+    this.placeBid = this.placeBid.bind(this);
+    // this.highlightrow = this.highlightrow.bind(this);
     
   }
     componentDidMount = async () => {
@@ -26,12 +27,12 @@ class MarketPlace extends Component {
         console.error(error);
       }
     };
-  makeBid(e){
+  placeBid(e){
     e.preventDefault();
     const {deposit, secret} = this.state.formData
     this.setState({ makebid: !this.state.makebid})
-  }
-  
+  };
+
   handleChange(e) {
     e.preventDefault();
     const formData = Object.assign({}, this.state.formData);
@@ -82,6 +83,7 @@ class MarketPlace extends Component {
                     <Button onClick={() => this.cancelAuction(listing)}>Cancel</Button>
                     :
                   <div>
+                    <button onClick={this.placeBid}>sup</button>
                     <InputGroup>
                     <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Bid Amount" />
                     <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
