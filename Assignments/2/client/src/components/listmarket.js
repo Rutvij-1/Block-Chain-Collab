@@ -76,7 +76,6 @@ class MarketPlace extends Component {
                     from: this.state.currentAccount,
                     value: deposit
                 });
-                alert("Bid placed successfully");
             } catch (error) {
                 console.log(error);
             }
