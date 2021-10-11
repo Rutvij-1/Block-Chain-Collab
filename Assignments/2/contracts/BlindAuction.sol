@@ -39,6 +39,7 @@ contract BlindAuction {
         bool sold;
         address payable highestBidder;
         uint256 highestBid;
+        address payable[] revealedBidders;
         mapping(address => Bid) bids;
         // Allowed withdrawals of previous bids
         mapping(address => uint256) pendingReturns;
@@ -185,8 +186,45 @@ contract BlindAuction {
         _;
     }
 
+    // function integersToString(uint256 _i, uint256 _j)
+    //     internal
+    //     pure
+    //     returns (string memory)
+    // {
+    //     uint256 j = _i;
+    //     uint256 len;
+
+    //     while (j != 0) {
+    //         len++;
+    //         j /= 10;
+    //     }
+    //     j = _j;
+    //     while (j != 0) {
+    //         len++;
+    //         j /= 10;
+    //     }
+    //     len++;
+    //     bytes memory bstr = new bytes(len);
+    //     uint256 k = len - 1;
+
+    //     while (_j != 0) {
+    //         bstr[k--] = bytes1(uint8(48 + (_j % 10)));
+    //         _j /= 10;
+    //     }
+    //     bstr[k--] = bytes1(uint8(32));
+    //     while (_i != 0) {
+    //         bstr[k--] = bytes1(uint8(48 + (_i % 10)));
+    //         _i /= 10;
+    //     }
+    //     return string(bstr);
+    // }
+
     modifier onlyBefore(uint256 _time) {
         require(block.timestamp < _time, "After time");
+        // require(
+        //     block.timestamp < _time,
+        //     integersToString(block.timestamp, _time)
+        // );
         _;
     }
     modifier onlyAfter(uint256 _time) {
@@ -275,7 +313,8 @@ contract BlindAuction {
             item_description,
             false,
             address(0),
-            0
+            0,
+            new address payable[](0)
         );
         emit AuctionStarted(auction_id, item_name, item_description);
         emit BiddingStarted(auction_id, bidding_end);
@@ -356,6 +395,7 @@ contract BlindAuction {
             // Do not refund deposit.
             emit BidRevealFailed(auction_id, msg.sender);
         } else {
+            Auctions[auction_id].revealedBidders.push(msg.sender);
             refund += bidToCheck.deposit;
             if (bidToCheck.deposit >= value) {
                 if (placeBid(auction_id, msg.sender, value)) refund -= value;
@@ -399,17 +439,21 @@ contract BlindAuction {
 
     ///@dev function to withdraw overbid/non-winning bids
     ///@param auction_id is the id of the Auction
-    function withdraw(uint256 auction_id) external auctionEnded(auction_id) {
+    ///@param bidder is the address of the bidder whose payment is pending
+    function withdraw(uint256 auction_id, address payable bidder)
+        internal
+        auctionEnded(auction_id)
+    {
         //emit BidderRefunded(auction_id,msg.sender, Auctions[auction_id].pendingReturns[msg.sender]);
-        if (Auctions[auction_id].pendingReturns[msg.sender] > 0) {
-            uint256 value = Auctions[auction_id].pendingReturns[msg.sender];
-            Auctions[auction_id].pendingReturns[msg.sender] = 0;
-            address payable payable_sender = msg.sender;
+        if (Auctions[auction_id].pendingReturns[bidder] > 0) {
+            uint256 value = Auctions[auction_id].pendingReturns[bidder];
+            Auctions[auction_id].pendingReturns[bidder] = 0;
+            address payable payable_sender = bidder;
             payable_sender.transfer(value);
             emit BidderRefunded(
                 auction_id,
-                msg.sender,
-                Auctions[auction_id].pendingReturns[msg.sender]
+                bidder,
+                Auctions[auction_id].pendingReturns[bidder]
             );
         }
     }
@@ -439,6 +483,13 @@ contract BlindAuction {
             );
             Auctions[auction_id].ended = true;
             Auctions[auction_id].sold = true;
+            for (
+                uint256 i = 0;
+                i < Auctions[auction_id].revealedBidders.length;
+                ++i
+            ) {
+                withdraw(auction_id, Auctions[auction_id].revealedBidders[i]);
+            }
             Auctions[auction_id].beneficiary.transfer(
                 Auctions[auction_id].highestBid
             );

@@ -44,6 +44,7 @@ contract AveragePriceAuction {
         // uint256 highestBid;
         uint256 sum;
         uint256 no_of_bids;
+        address payable[] revealedBidders;
         mapping(uint256 => address) bidders;
         mapping(address => Bid) bids;
         // Allowed withdrawals of previous bids
@@ -68,8 +69,8 @@ contract AveragePriceAuction {
         string item_name;
         string item_description;
         bool bidplaced;
-        
-        //bool sold; 
+
+        //bool sold;
         //address highestBidder;
         //uint highestBid;
 
@@ -281,7 +282,8 @@ contract AveragePriceAuction {
             item_description,
             false,
             0,
-            0
+            0,
+            new address payable[](0)
         );
         emit AuctionStarted(auction_id, item_name, item_description);
         emit BiddingStarted(auction_id, bidding_end);
@@ -362,6 +364,7 @@ contract AveragePriceAuction {
             // Do not refund deposit.
             emit BidRevealFailed(auction_id, msg.sender);
         } else {
+            Auctions[auction_id].revealedBidders.push(msg.sender);
             refund += bidToCheck.deposit;
             if (bidToCheck.deposit >= value) {
                 if (placeBid(auction_id, msg.sender, value)) refund -= value;
@@ -397,17 +400,21 @@ contract AveragePriceAuction {
 
     ///@dev function to withdraw overbid/non-winning bids
     ///@param auction_id is the id of the Auction
-    function withdraw(uint256 auction_id) external auctionEnded(auction_id) {
+    ///@param bidder is the address of the bidder whose payment is pending
+    function withdraw(uint256 auction_id, address payable bidder)
+        internal
+        auctionEnded(auction_id)
+    {
         //emit BidderRefunded(auction_id,msg.sender, Auctions[auction_id].pendingReturns[msg.sender]);
-        if (Auctions[auction_id].pendingReturns[msg.sender] > 0) {
-            uint256 value = Auctions[auction_id].pendingReturns[msg.sender];
-            Auctions[auction_id].pendingReturns[msg.sender] = 0;
-            address payable payable_sender = msg.sender;
+        if (Auctions[auction_id].pendingReturns[bidder] > 0) {
+            uint256 value = Auctions[auction_id].pendingReturns[bidder];
+            Auctions[auction_id].pendingReturns[bidder] = 0;
+            address payable payable_sender = bidder;
             payable_sender.transfer(value);
             emit BidderRefunded(
                 auction_id,
-                msg.sender,
-                Auctions[auction_id].pendingReturns[msg.sender]
+                bidder,
+                Auctions[auction_id].pendingReturns[bidder]
             );
         }
     }
@@ -434,11 +441,11 @@ contract AveragePriceAuction {
                     bidder_address
                 ];
                 uint256 difference = Auctions[auction_id].sum -
-                    bid_value *
-                    Auctions[auction_id].no_of_bids;
-                if (difference < 0) {
-                    difference = difference * uint256(-1);
-                }
+                    (bid_value * Auctions[auction_id].no_of_bids);
+                // if (difference < 0) {
+                //     difference = -difference;
+                // }
+                difference = difference >= 0 ? difference : -difference;
                 if (difference < closest_difference) {
                     closest_difference = difference;
                     winner = bidder_address;
@@ -446,9 +453,16 @@ contract AveragePriceAuction {
                 }
             }
             Auctions[auction_id].pendingReturns[winner] = 0;
-            Auctions[auction_id].beneficiary.transfer(winning_bid);
             Auctions[auction_id].ended = true;
             Auctions[auction_id].sold = true;
+            for (
+                uint256 i = 0;
+                i < Auctions[auction_id].revealedBidders.length;
+                ++i
+            ) {
+                withdraw(auction_id, Auctions[auction_id].revealedBidders[i]);
+            }
+            Auctions[auction_id].beneficiary.transfer(winning_bid);
             emit WinnerChosen(auction_id, winner);
         }
     }

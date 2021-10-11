@@ -42,6 +42,7 @@ contract VikreyAuction {
         address payable highestBidder;
         uint256 highestBid;
         uint256 secondHighestBid;
+        address payable[] revealedBidders;
         //address payable secondHighestBidder;
         mapping(address => Bid) bids;
         // Allowed withdrawals of previous bids
@@ -314,7 +315,8 @@ contract VikreyAuction {
             false,
             address(0),
             0,
-            0
+            0,
+            new address payable[](0)
             //address(0)
         );
         emit AuctionStarted(auction_id, item_name, item_description);
@@ -396,6 +398,7 @@ contract VikreyAuction {
             // Do not refund deposit.
             emit BidRevealFailed(auction_id, msg.sender);
         } else {
+            Auctions[auction_id].revealedBidders.push(msg.sender);
             refund += bidToCheck.deposit;
             if (bidToCheck.deposit >= value) {
                 if (placeBid(auction_id, msg.sender, value)) refund -= value;
@@ -435,7 +438,7 @@ contract VikreyAuction {
             }*/
             Auctions[auction_id].secondHighestBid = value;
             return false;
-          //  Auctions[auction_id].secondHighestBidder = bidder;
+            //  Auctions[auction_id].secondHighestBidder = bidder;
         } else if (value > Auctions[auction_id].highestBid) {
             // Refund the previously highest bidder.
             /*if (Auctions[auction_id].secondHighestBidder != address(0)) {
@@ -449,13 +452,16 @@ contract VikreyAuction {
                 .highestBid;
             Auctions[auction_id].highestBid = value;
             Auctions[auction_id].highestBidder = bidder;*/
-            Auctions[auction_id].secondHighestBid = Auctions[auction_id].highestBid;
+            Auctions[auction_id].secondHighestBid = Auctions[auction_id]
+                .highestBid;
             Auctions[auction_id].highestBid = value;
-            Auctions[auction_id].pendingReturns[Auctions[auction_id].highestBidder] += Auctions[auction_id].secondHighestBid; 
+            Auctions[auction_id].pendingReturns[
+                Auctions[auction_id].highestBidder
+            ] += Auctions[auction_id].secondHighestBid;
 
             Auctions[auction_id].highestBidder = bidder;
             return true;
-            
+
             //Auctions[auction_id].pendAuctionsingReturns[]
         }
 
@@ -464,14 +470,22 @@ contract VikreyAuction {
 
     ///@dev function to withdraw overbid/non-winning bids
     ///@param auction_id is the id of the Auction
-    function withdraw(uint256 auction_id) external auctionEnded(auction_id) {
+    ///@param bidder is the address of the bidder whose payment is pending
+    function withdraw(uint256 auction_id, address payable bidder)
+        internal
+        auctionEnded(auction_id)
+    {
         //emit BidderRefunded(auction_id,msg.sender, Auctions[auction_id].pendingReturns[msg.sender]);
-        if (Auctions[auction_id].pendingReturns[msg.sender] > 0) {
-            uint256 value = Auctions[auction_id].pendingReturns[msg.sender];
-            Auctions[auction_id].pendingReturns[msg.sender] = 0;
-            //address payable payable_sender = msg.sender;
-            msg.sender.transfer(value);
-            emit BidderRefunded(auction_id, msg.sender, value);
+        if (Auctions[auction_id].pendingReturns[bidder] > 0) {
+            uint256 value = Auctions[auction_id].pendingReturns[bidder];
+            Auctions[auction_id].pendingReturns[bidder] = 0;
+            address payable payable_sender = bidder;
+            payable_sender.transfer(value);
+            emit BidderRefunded(
+                auction_id,
+                bidder,
+                Auctions[auction_id].pendingReturns[bidder]
+            );
         }
     }
 
@@ -494,7 +508,7 @@ contract VikreyAuction {
             emit AuctionEnded(auction_id, address(0), 0);
             Auctions[auction_id].ended = true;
         } else if (
-           // Auctions[auction_id].secondHighestBidder == address(0) &&
+            // Auctions[auction_id].secondHighestBidder == address(0) &&
             Auctions[auction_id].secondHighestBid == 0
         ) {
             emit AuctionEnded(
@@ -517,16 +531,23 @@ contract VikreyAuction {
             );
             Auctions[auction_id].ended = true;
             Auctions[auction_id].sold = true;
-            uint256 difference = Auctions[auction_id].highestBid - Auctions[auction_id].secondHighestBid;
-            Auctions[auction_id].pendingReturns[Auctions[auction_id].highestBidder] += difference;
+            uint256 difference = Auctions[auction_id].highestBid -
+                Auctions[auction_id].secondHighestBid;
+            Auctions[auction_id].pendingReturns[
+                Auctions[auction_id].highestBidder
+            ] += difference;
             //highest.transfer(Auctions[auction_id].highestBid);
+            for (
+                uint256 i = 0;
+                i < Auctions[auction_id].revealedBidders.length;
+                ++i
+            ) {
+                withdraw(auction_id, Auctions[auction_id].revealedBidders[i]);
+            }
             Auctions[auction_id].beneficiary.transfer(
                 Auctions[auction_id].secondHighestBid
             );
-            emit WinnerChosen(
-                auction_id,
-                Auctions[auction_id].highestBidder
-            );
+            emit WinnerChosen(auction_id, Auctions[auction_id].highestBidder);
         }
     }
 }

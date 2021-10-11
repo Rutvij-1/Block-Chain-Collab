@@ -35,7 +35,6 @@ class MarketPlace extends Component {
         vikreyAuctions[i]["bidding_deadline"] = new Date(vikreyAuctions[i]["biddingEnd"] * 1000);
         vikreyAuctions[i]["reveal_deadline"] = new Date(vikreyAuctions[i]["revealEnd"] * 1000);
       }
-      // let auctions = blindAuctions.concat(vikreyAuctions);
       offSet += vikreyAuctions.length;
       let averageAuctions = await this.props.average_contract.methods.getactiveauctions().call();
       for (let i = 0; i < averageAuctions.length; ++i) {
@@ -112,20 +111,6 @@ class MarketPlace extends Component {
       }
     }
   }
-  endAuction = (auction_id, type) => (e) => {
-    e.preventDefault();
-    let listing = this.state.listings[auction_id];
-    const { blind_contract, vickrey_contract, average_contract } = this.state
-    console.log(listing, type);
-    if (type === "Blind Auction") {
-      // blind_contract.withdraw
-
-    } else if (type === "Vikrey Auction") {
-
-    } else {
-
-    }
-  };
 
   revealBid = (auction_id, type) => (e) => {
     e.preventDefault();
@@ -139,6 +124,34 @@ class MarketPlace extends Component {
 
     } else {
 
+    }
+  };
+
+  endAuction = (auction_id, type) => (e) => {
+    e.preventDefault();
+    const { blind_contract, vickrey_contract, average_contract } = this.state;
+    try {
+      if (type === "Blind Auction") {
+        this.props.blind_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.state.currentAccount
+        });
+      } else if (type === "Vikrey Auction") {
+        this.props.vickrey_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.state.currentAccount
+        });
+      } else {
+        this.props.average_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.state.currentAccount
+        });
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
