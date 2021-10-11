@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Card, Button, Spinner, CardGroup, Table, InputGroup } from "react-bootstrap";
-import VickreyAuction2 from "./contracts/VickreyAuction2.json"
+import VikreyAuction from "./contracts/VikreyAuction.json"
 import BlindAuction from "./contracts/BlindAuction.json"
 import getWeb3 from "./getWeb3";
 import NavBar from "./components/navbar";
@@ -46,9 +46,9 @@ class App extends Component {
             console.log(accounts);
             // Get the contract instances.
             const networkId = await web3.eth.net.getId();
-            const deployedNetwork1 = VickreyAuction2.networks[networkId];
+            const deployedNetwork1 = VikreyAuction.networks[networkId];
             const instance1 = await new web3.eth.Contract(
-                VickreyAuction2.abi,
+                VikreyAuction.abi,
                 deployedNetwork1 && deployedNetwork1.address,
             );
             instance1.options.address = deployedNetwork1.address
@@ -118,8 +118,18 @@ class App extends Component {
     createAuction(e) {
         e.preventDefault();
         const { accounts, blind_contract, vickrey_contract, average_contract } = this.state;
-        const { item_name, item_description, bidding_time, reveal_time, auctionType } = this.state.formData;
+        const { item_name, item_description, bidding_deadline, reveal_deadline, auctionType } = this.state.formData;
         console.log(this.state.formData);
+        let bidding_time = parseInt(((new Date(bidding_deadline)).getTime() - Date.now()) / 1000);
+        let reveal_time = parseInt(((new Date(reveal_deadline)).getTime() - Date.now()) / 1000) - bidding_time;
+        if (bidding_time <= 0) {
+            alert("Invalid Bidding Deadline");
+            return false;
+        }
+        if (reveal_time <= 0) {
+            alert("Invalid Reveal Deadline");
+            return false;
+        }
         if (auctionType === "Blind Auction") {
             blind_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
                 .send({ from: accounts[0] });
