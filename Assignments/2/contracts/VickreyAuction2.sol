@@ -79,10 +79,10 @@ contract VickreyAuction2 {
 
     /// The function has been called too early.
     /// Try again at `time`.
-    // error TooEarly(uint time);
+    //error TooEarly(uint time);
     /// The function has been called too late.
     /// It cannot be called after `time`.
-    // error TooLate(uint time);
+    //error TooLate(uint time);
     /// The function auctionEnd has already been called.
     //error AuctionEndAlreadyCalled();
 
@@ -98,7 +98,7 @@ contract VickreyAuction2 {
         string item_description
     );
 
-    // @dev this event to annouce auction started
+    /// @dev this event to annouce auction started
     /// @param Auction_id is the id of the auction
     /// @param highestBidder is the address of the highest Bidder
     /// @param highestBid is the value of the winning bid
@@ -107,6 +107,10 @@ contract VickreyAuction2 {
         address highestBidder,
         uint256 highestBid
     );
+
+    ///@dev when an item goes unsold at the end of the auction
+    ///@param auction_id is the id of the auction
+    event ItemUnsold(uint256 auction_id);
 
     /// @dev this event to annouce bidding started
     /// @param Auction_id is the id of the auction
@@ -138,22 +142,35 @@ contract VickreyAuction2 {
     ///@dev bid revealed
     ///@param Auction_id is the id of the auction
     ///@param bidder is the address of the revealer
-    ///@param success refers to whether the bid is succesfully revealed and refund done
-    event BidRevealed(uint256 Auction_id, address bidder, bool success);
+    event BidRevealed(uint256 Auction_id, address bidder);
 
-    ///@dev event to notify withdrawal of bids
+    ///@dev bid revealed failed
+    ///@param Auction_id is the id of the auction
+    ///@param bidder is the address of the revealer
+    event BidRevealFailed(uint256 Auction_id, address bidder);
+
+    ///@dev event to notify Refunds of bids
     ///@param auction_id is the id of the auction
     ///@param bidder is the address of the revealer
     ///@param bid_value  refers to whether the bid is succesfully revealed and refund done
-    event BidderWithdrawn(
-        uint256 auction_id,
-        address bidder,
-        uint256 bid_value
-    );
+    event BidderRefunded(uint256 auction_id, address bidder, uint256 bid_value);
 
-    ///@dev when an item goes unsold at the end of the auction
+    ///@dev event to notify Refunds of bids
     ///@param auction_id is the id of the auction
-    event ItemUnsold(uint256 auction_id);
+    ///@param bidder is the address of the revealer
+    ///@param balance  refers to whether the bid is succesfully revealed and refund done
+    event BalanceRefunded(uint256 auction_id, address bidder, uint256 balance);
+
+    ///@dev event to notify when the deposit is not enough
+    ///@param auction_id is the id of the auction
+    ///@param bidder is the bidder
+    event DepositNotEnough(uint256 auction_id, address bidder);
+
+    ///@dev to notify highest Bid has been modified
+    ///@param auction_id is the id of the auction
+    ///@param bidder is the bidder
+    ///@param bid_value refers to the bid
+    event NewHighestBid(uint256 auction_id, address bidder, uint256 bid_value);
 
     /// @dev create a lists of all auctions
     mapping(uint256 => auctions) private Auctions;
@@ -172,11 +189,11 @@ contract VickreyAuction2 {
     }
 
     modifier onlyBefore(uint256 _time) {
-        require(block.timestamp < _time);
+        require(block.timestamp < _time, "After time");
         _;
     }
     modifier onlyAfter(uint256 _time) {
-        require(block.timestamp > _time);
+        require(block.timestamp > _time, "before time");
         _;
     }
 
@@ -197,7 +214,7 @@ contract VickreyAuction2 {
 
     modifier alreadyBidder(uint256 auction_id) {
         require(
-            Auctions[auction_id].bidded[msg.sender],
+            Auctions[auction_id].bidded[msg.sender] == true,
             "Didn't place a bet,no point in revealing the bid"
         );
         _;
@@ -210,9 +227,15 @@ contract VickreyAuction2 {
         );
         _;
     }
-
     modifier auctionActive(uint256 auction_id) {
         require(Auctions[auction_id].ended == false, "Auction already ended");
+        _;
+    }
+    modifier auctionEnded(uint256 auction_id) {
+        require(
+            Auctions[auction_id].ended == true,
+            "Cant Ask refund,auction not ended"
+        );
         _;
     }
 
@@ -304,6 +327,7 @@ contract VickreyAuction2 {
         newBidder(auction_id)
     {
         Auctions[auction_id].bids[msg.sender] = Bid(blindedBid, msg.value);
+        Auctions[auction_id].bidded[msg.sender] = true;
         emit BidMade(msg.sender);
     }
 
@@ -311,13 +335,12 @@ contract VickreyAuction2 {
     /// @dev correctly blinded invalid bids and for all bids except for
     /// @dev the totally highest.
     /// @param value value of the bid
-    /// @param fake not sure what fake is for
     /// @param secret again not sure
     /// @param auction_id id of the auction
     function reveal(
         uint256 value,
-        bool fake,
-        bytes32 secret,
+        //bool fake,
+        string calldata secret,
         uint256 auction_id
     )
         external
@@ -332,24 +355,23 @@ contract VickreyAuction2 {
         Bid storage bidToCheck = Auctions[auction_id].bids[msg.sender];
 
         // improper revealing
-        if (
-            bidToCheck.bidHash !=
-            keccak256(abi.encodePacked(value, fake, secret))
-        ) {
+        if (bidToCheck.bidHash != keccak256(abi.encode(value, secret))) {
             // Bid was not actually revealed.
             // Do not refund deposit.
+            emit BidRevealFailed(auction_id, msg.sender);
         } else {
             refund += bidToCheck.deposit;
-            if (!fake && bidToCheck.deposit >= value) {
+            if (bidToCheck.deposit >= value) {
                 if (placeBid(auction_id, msg.sender, value)) refund -= value;
-            }
+                emit BidRevealed(auction_id, msg.sender);
+            } else emit DepositNotEnough(auction_id, msg.sender);
         }
         // Make it impossible for the sender to re-claim
         // the same deposit.
         bidToCheck.bidHash = bytes32(0);
-
+        emit BalanceRefunded(auction_id, msg.sender, refund);
         msg.sender.transfer(refund);
-        emit BidRevealed(auction_id, msg.sender, success);
+        //emit BidRevealed(auction_id,msg.sender,success);
     }
 
     // This is an "internal" function which means that it
@@ -397,17 +419,14 @@ contract VickreyAuction2 {
 
     ///@dev function to withdraw overbid/non-winning bids
     ///@param auction_id is the id of the Auction
-    function withdraw(uint256 auction_id) external {
-        emit BidderWithdrawn(
-            auction_id,
-            msg.sender,
-            Auctions[auction_id].pendingReturns[msg.sender]
-        );
+    function withdraw(uint256 auction_id) external auctionEnded(auction_id) {
+        //emit BidderRefunded(auction_id,msg.sender, Auctions[auction_id].pendingReturns[msg.sender]);
         if (Auctions[auction_id].pendingReturns[msg.sender] > 0) {
             uint256 value = Auctions[auction_id].pendingReturns[msg.sender];
             Auctions[auction_id].pendingReturns[msg.sender] = 0;
             address payable payable_sender = msg.sender;
             payable_sender.transfer(value);
+            emit BidderRefunded(auction_id, msg.sender, value);
         }
     }
 

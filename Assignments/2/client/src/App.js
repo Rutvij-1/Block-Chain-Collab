@@ -176,7 +176,7 @@ class App extends Component {
                 }
                 {this.state.showlistings &&
 
-                    <MarketPlace account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} />
+                    <MarketPlace web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} />
                 }
                 {
                     this.state.showcreate &&
