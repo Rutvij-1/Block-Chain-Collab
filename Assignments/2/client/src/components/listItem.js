@@ -19,12 +19,12 @@ class ListAuctionItem extends Component {
                         <input type="item_description" className="form-control" id="item_description" required onChange={this.props.handleChange} placeholder="Harry Potter" />
                     </div>
                     <div className="mb-3">
-                        <label className="form-label">Bidding Time</label>
-                        <input type="bidding_time" className="form-control" id="bidding_time" required onChange={this.props.handleChange} placeholder="100 (in seconds)" />
+                        <label className="form-label">Bidding Deadline</label>
+                        <input type="datetime-local" className="form-control" id="bidding_deadline" required onChange={this.props.handleChange} />
                     </div>
                     <div className="mb-3">
-                        <label className="form-label">Reveal Time</label>
-                        <input type="reveal_time" className="form-control" id="reveal_time" required onChange={this.props.handleChange} placeholder="120 (in seconds)" />
+                        <label className="form-label">Reveal Deadline</label>
+                        <input type="datetime-local" className="form-control" id="reveal_deadline" required onChange={this.props.handleChange} />
                     </div>
                     <div className="mb-3">
                         <label className="form-label">Auction Type</label>

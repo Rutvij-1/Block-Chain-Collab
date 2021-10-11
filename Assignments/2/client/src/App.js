@@ -118,8 +118,18 @@ class App extends Component {
     createAuction(e) {
         e.preventDefault();
         const { accounts, blind_contract, vickrey_contract, average_contract } = this.state;
-        const { item_name, item_description, bidding_time, reveal_time, auctionType } = this.state.formData;
+        const { item_name, item_description, bidding_deadline, reveal_deadline, auctionType } = this.state.formData;
         console.log(this.state.formData);
+        let bidding_time = parseInt(((new Date(bidding_deadline)).getTime() - Date.now()) / 1000);
+        let reveal_time = parseInt(((new Date(reveal_deadline)).getTime() - Date.now()) / 1000) - bidding_time;
+        if (bidding_time <= 0) {
+            alert("Invalid Bidding Deadline");
+            return false;
+        }
+        if (reveal_time <= 0) {
+            alert("Invalid Reveal Deadline");
+            return false;
+        }
         if (auctionType === "Blind Auction") {
             blind_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
                 .send({ from: accounts[0] });
