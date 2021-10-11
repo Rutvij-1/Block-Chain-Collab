@@ -11,9 +11,7 @@ class MyAuctions extends Component {
 			formData: {}
 		}
 		this.handleChange = this.handleChange.bind(this);
-		this.makeBid = this.makeBid.bind(this);
 		this.endAuction = this.endAuction.bind(this);
-		this.revealBid = this.revealBid.bind(this);
 	}
 	componentDidMount = async () => {
 		try {
@@ -24,35 +22,45 @@ class MyAuctions extends Component {
 				web3: this.props.web3, 
 				currentAccount: this.props.account 
 			});
-
+			let mylist = []
 			let offSet = 1000;
 			let blindAuctions = await this.props.blind_contract.methods.getactiveauctions().call({ from: this.props.account });
 			for (let i = 0; i < blindAuctions.length; ++i) {
-				blindAuctions[i]["type"] = "Blind Auction";
-				blindAuctions[i]["new_auction_id"] = parseInt(blindAuctions[i]["auction_id"]) + offSet;
-				blindAuctions[i]["bidding_deadline"] = new Date(blindAuctions[i]["biddingEnd"] * 1000);
-				blindAuctions[i]["reveal_deadline"] = new Date(blindAuctions[i]["revealEnd"] * 1000);
+				if(blindAuctions[i]["beneficiary"] == this.props.account)
+				{
+					blindAuctions[i]["type"] = "Blind Auction";
+					blindAuctions[i]["new_auction_id"] = parseInt(blindAuctions[i]["auction_id"]) + offSet;
+					blindAuctions[i]["bidding_deadline"] = new Date(blindAuctions[i]["biddingEnd"] * 1000);
+					blindAuctions[i]["reveal_deadline"] = new Date(blindAuctions[i]["revealEnd"] * 1000);
+					mylist.push(blindAuctions[i]);
+				}
 			}
-			offSet += blindAuctions.length;
+			offSet += mylist.length;
 			let vikreyAuctions = await this.props.vickrey_contract.methods.getactiveauctions().call({ from: this.props.account });
 			for (let i = 0; i < vikreyAuctions.length; ++i) {
-				vikreyAuctions[i]["type"] = "Vikrey Auction";
-				vikreyAuctions[i]["new_auction_id"] = parseInt(vikreyAuctions[i]["auction_id"]) + offSet;
-				vikreyAuctions[i]["bidding_deadline"] = new Date(vikreyAuctions[i]["biddingEnd"] * 1000);
-				vikreyAuctions[i]["reveal_deadline"] = new Date(vikreyAuctions[i]["revealEnd"] * 1000);
+				if(blindAuctions[i]["beneficiary"] == this.props.account){
+					vikreyAuctions[i]["type"] = "Vikrey Auction";
+					vikreyAuctions[i]["new_auction_id"] = parseInt(vikreyAuctions[i]["auction_id"]) + offSet;
+					vikreyAuctions[i]["bidding_deadline"] = new Date(vikreyAuctions[i]["biddingEnd"] * 1000);
+					vikreyAuctions[i]["reveal_deadline"] = new Date(vikreyAuctions[i]["revealEnd"] * 1000);
+					mylist.push(vikreyAuctions[i]);
+				}
 			}
 			// let auctions = blindAuctions.concat(vikreyAuctions);
-			offSet += vikreyAuctions.length;
+			offSet += mylist.length;
 			let averageAuctions = await this.props.average_contract.methods.getactiveauctions().call({ from: this.props.account });
 			for (let i = 0; i < averageAuctions.length; ++i) {
-				averageAuctions[i]["type"] = "Average Price Auction";
-				averageAuctions[i]["new_auction_id"] = parseInt(averageAuctions[i]["auction_id"]) + offSet;
-				averageAuctions[i]["bidding_deadline"] = new Date(averageAuctions[i]["biddingEnd"] * 1000);
-				averageAuctions[i]["reveal_deadline"] = new Date(averageAuctions[i]["revealEnd"] * 1000);
+				if(blindAuctions[i]["beneficiary"] == this.props.account){
+					averageAuctions[i]["type"] = "Average Price Auction";
+					averageAuctions[i]["new_auction_id"] = parseInt(averageAuctions[i]["auction_id"]) + offSet;
+					averageAuctions[i]["bidding_deadline"] = new Date(averageAuctions[i]["biddingEnd"] * 1000);
+					averageAuctions[i]["reveal_deadline"] = new Date(averageAuctions[i]["revealEnd"] * 1000);
+					mylist.push(averageAuctions[i]);
+				}
 			}
 			offSet += averageAuctions.length;
-			let auctions = [].concat(blindAuctions, vikreyAuctions, averageAuctions);
-			this.setState({ listings: auctions});
+			// let auctions = [].concat(blindAuctions, vikreyAuctions, averageAuctions);
+			this.setState({ listings: mylist});
 
 		} catch (error) {
 			alert(`Loading...`);
@@ -60,84 +68,25 @@ class MyAuctions extends Component {
 		}
 	};
 
-	makeBid = (auction_id, type) => e => {
-		e.preventDefault();
-		const { value, secret_key, deposit } = this.state.formData;
-    	const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
-		this.setState({ makebid: !this.state.makebid });
-		console.log(parseInt(Date.now() / 1000));
-		if (type === "Blind Auction") {
-			try {
-				blind_contract.methods.bid(
-					web3.utils.keccak256(
-						web3.eth.abi.encodeParameters(
-							["uint256", "string"],
-							[value, secret_key]
-						)
-					),
-					parseInt(auction_id)
-				).send({
-					from: currentAccount,
-					value: deposit
-				});
-			} catch (error) {
-				console.log(error);
-			}
-		} else if (type === "Vikrey Auction") {
-			try {
-				vickrey_contract.methods.bid(
-					web3.utils.keccak256(
-						web3.eth.abi.encodeParameters(
-							["uint256", "string"],
-							[value, secret_key]
-						)
-					),
-					parseInt(auction_id)
-				).send({
-					from: currentAccount,
-					value: deposit
-				});
-			} catch (error) {
-				console.log(error);
-			}
-		} else {
-			try {
-				average_contract.methods.bid(
-					web3.utils.keccak256(
-						web3.eth.abi.encodeParameters(
-							["uint256", "string"],
-							[value, secret_key]
-						)
-					),
-					parseInt(auction_id)
-				).send({
-					from: currentAccount,
-					value: deposit
-				});
-			} catch (error) {
-				console.log(error);
-			}
-		}
-	window.location.reload(false);
-}
-	endAuction = (auction_id, type) => (e) => {
+	
+	endAuction = (auction_id, type) => async(e) => {
 		e.preventDefault();
 		const { blind_contract, vickrey_contract, average_contract } = this.state;
 		try {
 		  if (type === "Blind Auction") {
-			blind_contract.methods.auctionEnd(
+			await blind_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
 			  from: this.state.currentAccount
 			});
 		  } else if (type === "Vikrey Auction") {
-			vickrey_contract.methods.auctionEnd(
+			await vickrey_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
 			  from: this.state.currentAccount
 			});
 		  } else {
-			average_contract.methods.auctionEnd(
+			await average_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
 			  from: this.state.currentAccount
@@ -146,65 +95,6 @@ class MyAuctions extends Component {
 		} catch (error) {
 		  console.log(error);
 		}
-	window.location.reload(false);
-};
-
-  revealBid = (auction_id, type) => (e) => {
-    e.preventDefault();
-	const { value, secret_key, deposit } = this.state.formData;
-	const { blind_contract, vickrey_contract, average_contract, web3, currentAccount } = this.state
-	if (type === "Blind Auction") {
-		try {
-			blind_contract.methods.reveal(
-				web3.utils.keccak256(
-					web3.eth.abi.encodeParameters(
-						["uint256", "string"],
-						[value, secret_key]
-					)
-				),
-				parseInt(auction_id)
-			).send({
-				from: currentAccount,
-				value: deposit
-			});
-		} catch (error) {
-			console.log(error);
-		}
-	} else if (type === "Vikrey Auction") {
-		try {
-			vickrey_contract.methods.reveal(
-				web3.utils.keccak256(
-					web3.eth.abi.encodeParameters(
-						["uint256", "string"],
-						[value, secret_key]
-					)
-				),
-				parseInt(auction_id)
-			).send({
-				from: currentAccount,
-				value: deposit
-			});
-		} catch (error) {
-			console.log(error);
-		}
-	} else {
-		try {
-			average_contract.methods.reveal(
-				web3.utils.keccak256(
-					web3.eth.abi.encodeParameters(
-						["uint256", "string"],
-						[value, secret_key]
-					)
-				),
-				parseInt(auction_id)
-			).send({
-				from: currentAccount,
-				value: deposit
-			});
-		} catch (error) {
-			console.log(error);
-		}
-	}
 	window.location.reload(false);
 };
 
@@ -218,7 +108,8 @@ class MyAuctions extends Component {
 	render() {
 		return (
 			<>
-				<h2>The active listings are:</h2>
+				<h2>My Listed Auctions</h2>
+				<br/>
 				<div style={{
 					display: "flex",
 					justifyContent: "center",

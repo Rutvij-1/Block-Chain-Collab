@@ -12,11 +12,11 @@ class Navbr extends Component{
       <Navbar bg="dark" variant="dark" sticky="top">
       <Container>
         <Navbar.Brand href="/">Tripple Auction</Navbar.Brand>
-          <Button variant="dark" className="justify-content-end" onClick={this.props.showbids}> Auctions
+          <Button variant="dark" className="justify-content-end" onClick={this.props.activeListings}> Auctions
           </Button>
-          <Button variant="dark" className="justify-content-end" onClick={this.props.showbids}> Create Auction
+          <Button variant="dark" className="justify-content-end" onClick={this.props.showcreate}> Create Auction
           </Button>
-          <Button variant="dark" className="justify-content-end" onClick={this.props.showbids}> My Auctions
+          <Button variant="dark" className="justify-content-end" onClick={this.props.showauctions}> My Auctions
           </Button>
           <Button variant="dark" className="justify-content-end" onClick={this.props.showbids}> My Bids
           </Button>

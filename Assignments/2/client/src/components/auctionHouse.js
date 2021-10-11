@@ -60,7 +60,7 @@ class AuctionHouse extends Component {
 		}
 	};
 
-	makeBid = (auction_id, type) => e => {
+	makeBid = (auction_id, type) => async(e) => {
 		e.preventDefault();
 		const { value, secret_key, deposit } = this.state.formData;
     	const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
@@ -68,7 +68,7 @@ class AuctionHouse extends Component {
 		console.log(parseInt(Date.now() / 1000));
 		if (type === "Blind Auction") {
 			try {
-				blind_contract.methods.bid(
+				await blind_contract.methods.bid(
 					web3.utils.keccak256(
 						web3.eth.abi.encodeParameters(
 							["uint256", "string"],
@@ -85,7 +85,7 @@ class AuctionHouse extends Component {
 			}
 		} else if (type === "Vikrey Auction") {
 			try {
-				vickrey_contract.methods.bid(
+				await vickrey_contract.methods.bid(
 					web3.utils.keccak256(
 						web3.eth.abi.encodeParameters(
 							["uint256", "string"],
@@ -102,7 +102,7 @@ class AuctionHouse extends Component {
 			}
 		} else {
 			try {
-				average_contract.methods.bid(
+				await average_contract.methods.bid(
 					web3.utils.keccak256(
 						web3.eth.abi.encodeParameters(
 							["uint256", "string"],
@@ -121,24 +121,24 @@ class AuctionHouse extends Component {
 	window.location.reload(false);
 }
 
-	endAuction = (auction_id, type) => (e) => {
+	endAuction = (auction_id, type) => async(e) => {
 		e.preventDefault();
 		const { blind_contract, vickrey_contract, average_contract } = this.state;
 		try {
 		  if (type === "Blind Auction") {
-			blind_contract.methods.auctionEnd(
+			await blind_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
 			  from: this.state.currentAccount
 			});
 		  } else if (type === "Vikrey Auction") {
-			vickrey_contract.methods.auctionEnd(
+			await vickrey_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
 			  from: this.state.currentAccount
 			});
 		  } else {
-			average_contract.methods.auctionEnd(
+			await average_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
 			  from: this.state.currentAccount
@@ -150,13 +150,13 @@ class AuctionHouse extends Component {
 	window.location.reload(false);
 };
 
-  revealBid = (auction_id, type) => (e) => {
+  revealBid = (auction_id, type) => async (e) => {
     e.preventDefault();
 	const { value, secret_key, deposit } = this.state.formData;
 	const { blind_contract, vickrey_contract, average_contract, web3, currentAccount } = this.state
 	if (type === "Blind Auction") {
 		try {
-			blind_contract.methods.reveal(
+			await blind_contract.methods.reveal(
 				web3.utils.keccak256(
 					web3.eth.abi.encodeParameters(
 						["uint256", "string"],
@@ -173,7 +173,7 @@ class AuctionHouse extends Component {
 		}
 	} else if (type === "Vikrey Auction") {
 		try {
-			vickrey_contract.methods.reveal(
+			await vickrey_contract.methods.reveal(
 				web3.utils.keccak256(
 					web3.eth.abi.encodeParameters(
 						["uint256", "string"],
@@ -190,7 +190,7 @@ class AuctionHouse extends Component {
 		}
 	} else {
 		try {
-			average_contract.methods.reveal(
+			await average_contract.methods.reveal(
 				web3.utils.keccak256(
 					web3.eth.abi.encodeParameters(
 						["uint256", "string"],

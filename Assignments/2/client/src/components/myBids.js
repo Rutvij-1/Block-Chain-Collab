@@ -12,7 +12,6 @@ class MyBids extends Component {
 		}
 		this.handleChange = this.handleChange.bind(this);
 		this.makeBid = this.makeBid.bind(this);
-		this.endAuction = this.endAuction.bind(this);
 		this.revealBid = this.revealBid.bind(this);
 	}
 	componentDidMount = async () => {
@@ -60,7 +59,7 @@ class MyBids extends Component {
     }
 	};
 
-	makeBid = (auction_id, type) => e => {
+	makeBid = (auction_id, type) => async(e) => {
 		e.preventDefault();
 		const { value, secret_key, deposit } = this.state.formData;
     	const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
@@ -68,7 +67,7 @@ class MyBids extends Component {
 		console.log(parseInt(Date.now() / 1000));
 		if (type === "Blind Auction") {
 			try {
-				blind_contract.methods.bid(
+				await blind_contract.methods.bid(
 					web3.utils.keccak256(
 						web3.eth.abi.encodeParameters(
 							["uint256", "string"],
@@ -85,7 +84,7 @@ class MyBids extends Component {
 			}
 		} else if (type === "Vikrey Auction") {
 			try {
-				vickrey_contract.methods.bid(
+				await vickrey_contract.methods.bid(
 					web3.utils.keccak256(
 						web3.eth.abi.encodeParameters(
 							["uint256", "string"],
@@ -102,7 +101,7 @@ class MyBids extends Component {
 			}
 		} else {
 			try {
-				average_contract.methods.bid(
+				await average_contract.methods.bid(
 					web3.utils.keccak256(
 						web3.eth.abi.encodeParameters(
 							["uint256", "string"],
@@ -121,13 +120,13 @@ class MyBids extends Component {
 		window.location.reload(false);
 	}
 
-  revealBid = (auction_id, type) => (e) => {
+  revealBid = (auction_id, type) => async(e) => {
     e.preventDefault();
 	const { value, secret_key, deposit } = this.state.formData;
 	const { blind_contract, vickrey_contract, average_contract, web3, currentAccount } = this.state
 	if (type === "Blind Auction") {
 		try {
-			blind_contract.methods.reveal(
+			await blind_contract.methods.reveal(
 				web3.utils.keccak256(
 					web3.eth.abi.encodeParameters(
 						["uint256", "string"],
@@ -144,7 +143,7 @@ class MyBids extends Component {
 		}
 	} else if (type === "Vikrey Auction") {
 		try {
-			vickrey_contract.methods.reveal(
+			await vickrey_contract.methods.reveal(
 				web3.utils.keccak256(
 					web3.eth.abi.encodeParameters(
 						["uint256", "string"],
@@ -161,7 +160,7 @@ class MyBids extends Component {
 		}
 	} else {
 		try {
-			average_contract.methods.reveal(
+			await average_contract.methods.reveal(
 				web3.utils.keccak256(
 					web3.eth.abi.encodeParameters(
 						["uint256", "string"],
@@ -180,35 +179,6 @@ class MyBids extends Component {
 	window.location.reload(false);
   };
 
-  endAuction = (auction_id, type) => (e) => {
-    e.preventDefault();
-    const { blind_contract, vickrey_contract, average_contract } = this.state;
-    try {
-      if (type === "Blind Auction") {
-        blind_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      } else if (type === "Vikrey Auction") {
-        vickrey_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      } else {
-        average_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      }
-    } catch (error) {
-      console.log(error);
-    }
-	window.location.reload(false);
-};
-
   handleChange(e) {
     e.preventDefault();
     const formData = Object.assign({}, this.state.formData);
@@ -219,7 +189,8 @@ class MyBids extends Component {
   render() {
     return (
       <>
-        <h2>The active listings are:</h2>
+		<h2>My Listed Bids</h2>
+		<br/>
         <div style={{
           display: "flex",
           justifyContent: "center",

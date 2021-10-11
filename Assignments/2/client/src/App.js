@@ -118,22 +118,42 @@ class App extends Component {
   activeListings = async () => {
     const { accounts, vickrey_contract, blind_contract, average_contract, showlistings } = this.state;
     console.log(accounts);
-    this.setState({ showlistings: !showlistings });
+    this.setState({ 
+      showlistings: !showlistings,
+      showcreate: false,
+      showbids: false,
+      showauctions: false
+     });
   };
 
   showcreate(e) {
     e.preventDefault();
-    this.setState({ showcreate: !this.state.showcreate });
+    this.setState({ 
+      showlistings: false,
+      showcreate: !this.state.showcreate,
+      showbids: false,
+      showauctions: false
+    });
   };
 
   showbids(e) {
     e.preventDefault();
-    this.setState({ showbids: !this.state.showbids });
+    this.setState({ 
+      showlistings: false,
+      showcreate: false,
+      showbids: !this.state.showbids,
+      showauctions: false
+    });
   };
 
   showauctions(e) {
     e.preventDefault();
-    this.setState({ showauctions: !this.state.showauctions });
+    this.setState({ 
+      showlistings: false,
+      showcreate: false,
+      showbids: false,
+      showauctions: !this.state.showauctions
+    });
   };
 
   placeBid(e) {
@@ -142,7 +162,7 @@ class App extends Component {
     const { deposit, secret } = this.state.formData
   };
 
-  createAuction(e) {
+  createAuction = async(e) => {
     e.preventDefault();
     const { accounts, blind_contract, vickrey_contract, average_contract } = this.state;
     const { item_name, item_description, bidding_deadline, reveal_deadline, auctionType } = this.state.formData;
@@ -159,15 +179,15 @@ class App extends Component {
       return false;
     }
     if (auctionType === "Blind Auction") {
-      blind_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
+      await blind_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
         .send({ from: accounts[0] });
     }
     else if (auctionType === "Vickrey Auction") {
-      vickrey_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
+      await vickrey_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
         .send({ from: accounts[0] });
     }
     else {
-      average_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
+      await average_contract.methods.auctionItem(item_name, item_description, bidding_time, reveal_time)
         .send({ from: accounts[0] });
     }
 		window.location.reload(false);
@@ -187,7 +207,7 @@ class App extends Component {
     }
     return (
       <div className="App">
-        <Navbr showbids={this.showbids}/>
+        <Navbr showauctions={this.showauctions} activeListings={this.activeListings} showcreate={this.showcreate} showbids={this.showbids}/>
         <h1>Smart Contract - Auction</h1>
         <br/>
         {(!this.state.showcreate && !this.state.showlistings) && (!this.state.showbids && !this.state.showauctions) &&
@@ -217,7 +237,7 @@ class App extends Component {
           <br/>
         <CardGroup>
         <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px' }}>
-            <Card.Img variant="top" src="auctionhouse.png" alt="te" />
+            <Card.Img variant="top" src="mybids.png" alt="te" />
             <Card.Body>
               <Card.Title>My Bids</Card.Title>
               <Card.Text>
@@ -227,7 +247,7 @@ class App extends Component {
             </Card.Body>
           </Card>
           <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px' }}>
-            <Card.Img variant="top" src="listitem.png" alt="te" />
+            <Card.Img variant="top" src="myauctions.png" alt="te" />
             <Card.Body>
               <Card.Title>My Auctions</Card.Title>
               <Card.Text>
