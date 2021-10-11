@@ -1,12 +1,12 @@
 compile
 migrate
 let accounts = await web3.eth.getAccounts()
-let instance = await VikreyAuction.deployed()
-instance.auctionItem("netflix","baap ki company",10,1200, {from: accounts[0]})
+let instance = await AveragePriceAuction.deployed()
+instance.auctionItem("netflix","baap ki company",120,120, {from: accounts[0]})
 instance.getactiveauctions()
-instance.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[100,"beneficiary"])),0,{from:accounts[0],value:110})
+instance.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[100,"beneficiary"])),2,{from:accounts[0],value:110})
 web3.eth.getBalance(accounts[1])
-instance.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[100,"first"])),0,{from:accounts[1],value:110})
+instance.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[100,"first"])),2,{from:accounts[1],value:110})
 web3.eth.getBalance(accounts[1])
 instance.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[150,"first repeat"])),0,{from:accounts[1],value:160})
 web3.eth.getBalance(accounts[1])
