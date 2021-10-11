@@ -110,6 +110,32 @@ class MarketPlace extends Component {
     }
   }
 
+  endAuction = (auction_id, type) => e => {
+    e.preventDefault();
+    try {
+      if (type === "Blind Auction") {
+        this.props.blind_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.state.currentAccount
+        });
+      } else if (type === "Vikrey Auction") {
+        this.props.vickrey_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.state.currentAccount
+        });
+      } else {
+        this.props.average_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.state.currentAccount
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
   handleChange(e) {
     e.preventDefault();
     const formData = Object.assign({}, this.state.formData);
@@ -132,8 +158,8 @@ class MarketPlace extends Component {
                 <td>Auction Type</td>
                 <td>Item Name</td>
                 <td>Item Description</td>
-                <td>Bidding Time</td>
-                <td>Bid Reveal Time</td>
+                <td>Bidding End</td>
+                <td>Reveal End</td>
                 {/* <td>Sold</td> */}
                 {/* <td>Status</td> */}
                 <td>Manage</td>
@@ -158,9 +184,13 @@ class MarketPlace extends Component {
                     {/* <td>{sold}</td> */}
                     {/* <td>{status}</td> */}
                     <td>
-                      {listing.beneficiary === this.state.currentAccount && (status === 'Active' || status === 'Unstarted') ?
-                        <Button onClick={() => this.cancelAuction(listing)}>Cancel</Button>
-                        :
+                      {listing.beneficiary === this.state.currentAccount ?
+                        <>
+                          {status === 'Ended' ?
+                            <Button onClick={() => this.endAuction(listing.auction_id, listing.type)}>End</Button> :
+                            <></>
+                          }
+                        </> :
                         <div>
                           <InputGroup>
                             <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
