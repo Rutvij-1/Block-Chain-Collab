@@ -1,8 +1,8 @@
 compile
 migrate
 let accounts = await web3.eth.getAccounts()
-let instance = await VikreyAuction.deployed()
-instance.auctionItem("netflix","baap ki company",60,60, {from: accounts[0]})
+let instance = await BlindAuction.deployed()
+instance.auctionItem("netflix","baap ki company",120,120, {from: accounts[0]})
 instance.getactiveauctions()
 instance.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[100,"beneficiary"])),0,{from:accounts[0],value:110})
 web3.eth.getBalance(accounts[1])
