@@ -33,8 +33,16 @@ class MarketPlace extends Component {
                 vikreyAuctions[i]["bidding_deadline"] = new Date(vikreyAuctions[i]["biddingEnd"] * 1000);
                 vikreyAuctions[i]["reveal_deadline"] = new Date(vikreyAuctions[i]["revealEnd"] * 1000);
             }
+            let auctions = blindAuctions.concat(vikreyAuctions);
             offSet += vikreyAuctions.length;
-            let auctions = blindAuctions.concat(vikreyAuctions)
+            let averageAuctions = await this.props.average_contract.methods.getactiveauctions().call();
+            for (let i = 0; i < averageAuctions.length; ++i) {
+                averageAuctions[i]["type"] = "Average Price Auction";
+                averageAuctions[i]["new_auction_id"] = parseInt(averageAuctions[i]["auction_id"]) + offSet;
+                averageAuctions[i]["bidding_deadline"] = new Date(averageAuctions[i]["biddingEnd"] * 1000);
+                averageAuctions[i]["reveal_deadline"] = new Date(averageAuctions[i]["revealEnd"] * 1000);
+            }
+            auctions = auctions.concat(averageAuctions);
             this.setState({ listings: auctions, currentAccount: this.props.account });
 
         } catch (error) {
@@ -80,6 +88,23 @@ class MarketPlace extends Component {
             } catch (error) {
                 console.log(error);
             }
+        } else {
+          try {
+            this.props.average_contract.methods.bid(
+                this.props.web3.utils.keccak256(
+                    this.props.web3.eth.abi.encodeParameters(
+                        ["uint256", "string"],
+                        [value, secret_key]
+                    )
+                ),
+                parseInt(auction_id)
+            ).send({
+                from: this.state.currentAccount,
+                value: deposit
+            });
+        } catch (error) {
+            console.log(error);
+        }
         }
     }
 
