@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Card, Button, Spinner, CardGroup, Table, InputGroup } from "react-bootstrap";
 import VikreyAuction from "./contracts/VikreyAuction.json"
 import BlindAuction from "./contracts/BlindAuction.json"
+import AveragePriceAuction from "./contracts/AveragePriceAuction.json"
 import getWeb3 from "./getWeb3";
 import NavBar from "./components/navbar";
 import MarketPlace from "./components/listmarket";
@@ -59,13 +60,21 @@ class App extends Component {
                 deployedNetwork2 && deployedNetwork2.address,
             );
             instance2.options.address = deployedNetwork2.address
-            console.log(accounts, deployedNetwork1.address, deployedNetwork2.address);
+
+            const deployedNetwork3 = AveragePriceAuction.networks[networkId];
+            const instance3 = await new web3.eth.Contract(
+                AveragePriceAuction.abi,
+                deployedNetwork3 && deployedNetwork3.address,
+            );
+            instance3.options.address = deployedNetwork3.address
+            console.log(accounts, deployedNetwork1.address, deployedNetwork2.address, deployedNetwork3.address);
             // Set web3, accounts, and contract to the state, and then proceed with an
             // example of interacting with the contract's methods.
             this.setState({
                 web3, accounts,
                 vickrey_contract: instance1,
                 blind_contract: instance2,
+                average_contract: instance3,
                 initialised: true,
                 currentAccount: accounts[0]
             }, this.init);
@@ -81,7 +90,7 @@ class App extends Component {
     init = async () => {
         if (this.state.initialised === false)
             return
-        const { accounts, vickrey_contract, web3 } = this.state;
+        const { accounts, web3 } = this.state;
         const response = await web3.eth.getBalance(accounts[0]);
         // Update state with the result.
         console.log(response);
@@ -89,15 +98,13 @@ class App extends Component {
     };
 
     activeListings = async () => {
-        const { accounts, vickrey_contract, blind_contract, showlistings } = this.state;
+        const { accounts, vickrey_contract, blind_contract, average_contract, showlistings } = this.state;
         console.log(accounts);
-        // await contract.methods.createListings(20010, "Mobile Phone", "One Plus 5T");
-        // await contract.methods.createListings(20011, "Mobile Phone", "One Plus 5T").call();
-        let temp = await vickrey_contract.methods.getactiveauctions().call();
-        let ret = await blind_contract.methods.getactiveauctions().call();
-        temp = temp.concat(ret)
-        // console.log(temp);
-        this.setState({ listings: temp, showlistings: !showlistings });
+        let vikreyAuctions = await vickrey_contract.methods.getactiveauctions().call();
+        let blindAuctions = await blind_contract.methods.getactiveauctions().call();
+        let averageAuctions = await average_contract.methods.getactiveauctions().call();
+        let auctions = [].concat(vikreyAuctions, blindAuctions, averageAuctions);
+        this.setState({ listings: auctions, showlistings: !showlistings });
     };
 
     showcreate(e) {
@@ -122,6 +129,7 @@ class App extends Component {
         console.log(this.state.formData);
         let bidding_time = parseInt(((new Date(bidding_deadline)).getTime() - Date.now()) / 1000);
         let reveal_time = parseInt(((new Date(reveal_deadline)).getTime() - Date.now()) / 1000) - bidding_time;
+        console.log(bidding_time, reveal_time, new Date());
         if (bidding_time <= 0) {
             alert("Invalid Bidding Deadline");
             return false;
@@ -186,7 +194,7 @@ class App extends Component {
                 }
                 {this.state.showlistings &&
 
-                    <MarketPlace web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} />
+                    <MarketPlace web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} />
                 }
                 {
                     this.state.showcreate &&

@@ -188,7 +188,41 @@ contract VikreyAuction {
         _;
     }
 
+    // function integersToString(uint256 _i, uint256 _j)
+    //     internal
+    //     pure
+    //     returns (string memory)
+    // {
+    //     uint256 j = _i;
+    //     uint256 len;
+
+    //     while (j != 0) {
+    //         len++;
+    //         j /= 10;
+    //     }
+    //     j = _j;
+    //     while (j != 0) {
+    //         len++;
+    //         j /= 10;
+    //     }
+    //     len++;
+    //     bytes memory bstr = new bytes(len);
+    //     uint256 k = len - 1;
+
+    //     while (_j != 0) {
+    //         bstr[k--] = bytes1(uint8(48 + (_j % 10)));
+    //         _j /= 10;
+    //     }
+    //     bstr[k--] = bytes1(uint8(32));
+    //     while (_i != 0) {
+    //         bstr[k--] = bytes1(uint8(48 + (_i % 10)));
+    //         _i /= 10;
+    //     }
+    //     return string(bstr);
+    // }
+
     modifier onlyBefore(uint256 _time) {
+        // string memory str = "After time" + block.timestamp;
         require(block.timestamp < _time, "After time");
         _;
     }

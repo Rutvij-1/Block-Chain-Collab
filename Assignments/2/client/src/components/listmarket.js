@@ -33,7 +33,15 @@ class MarketPlace extends Component {
                 vikreyAuctions[i]["reveal_deadline"] = new Date(vikreyAuctions[i]["revealEnd"] * 1000);
             }
             offSet += vikreyAuctions.length;
-            let auctions = blindAuctions.concat(vikreyAuctions)
+            let averageAuctions = await this.props.average_contract.methods.getactiveauctions().call();
+            for (let i = 0; i < averageAuctions.length; ++i) {
+                averageAuctions[i]["type"] = "Average Auction";
+                averageAuctions[i]["new_auction_id"] = parseInt(averageAuctions[i]["auction_id"]) + offSet;
+                averageAuctions[i]["bidding_deadline"] = new Date(averageAuctions[i]["biddingEnd"] * 1000);
+                averageAuctions[i]["reveal_deadline"] = new Date(averageAuctions[i]["revealEnd"] * 1000);
+            }
+            offSet += averageAuctions.length;
+            let auctions = [].concat(blindAuctions, vikreyAuctions, averageAuctions);
             this.setState({ listings: auctions, currentAccount: this.props.account });
 
         } catch (error) {
@@ -45,6 +53,7 @@ class MarketPlace extends Component {
         e.preventDefault();
         const { value, secret_key, deposit } = this.state.formData;
         this.setState({ makebid: !this.state.makebid });
+        console.log(parseInt(Date.now() / 1000));
         if (type === "Blind Auction") {
             try {
                 this.props.blind_contract.methods.bid(
@@ -65,6 +74,23 @@ class MarketPlace extends Component {
         } else if (type === "Vikrey Auction") {
             try {
                 this.props.vickrey_contract.methods.bid(
+                    this.props.web3.utils.keccak256(
+                        this.props.web3.eth.abi.encodeParameters(
+                            ["uint256", "string"],
+                            [value, secret_key]
+                        )
+                    ),
+                    parseInt(auction_id)
+                ).send({
+                    from: this.state.currentAccount,
+                    value: deposit
+                });
+            } catch (error) {
+                console.log(error);
+            }
+        } else {
+            try {
+                this.props.average_contract.methods.bid(
                     this.props.web3.utils.keccak256(
                         this.props.web3.eth.abi.encodeParameters(
                             ["uint256", "string"],
