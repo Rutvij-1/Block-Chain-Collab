@@ -4,11 +4,13 @@ import VikreyAuction from "./contracts/VikreyAuction.json"
 import BlindAuction from "./contracts/BlindAuction.json"
 import AveragePriceAuction from "./contracts/AveragePriceAuction.json"
 import getWeb3 from "./getWeb3";
-import NavBar from "./components/navbar";
-import MarketPlace from "./components/listmarket";
-import ListAuctionItem from "./components/listItem";
+import Navbr from "./components/navbar";
+import AuctionHouse from "./components/auctionHouse";
+import CreateAuctions from "./components/createAuctions";
 import "./App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import MyBids from "./components/myBids";
+import MyAuctions from "./components/myAuctions";
 
 class App extends Component {
   constructor(props) {
@@ -25,16 +27,20 @@ class App extends Component {
       listings: [],
       showlistings: false,
       showcreate: false,
+      showbids: false,
+      showauctions: false,
       formData: {}
     };
 
     this.activeListings = this.activeListings.bind(this);
     this.init = this.init.bind(this);
-    this.cancelAuction = this.cancelAuction.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.createAuction = this.createAuction.bind(this);
     this.placeBid = this.placeBid.bind(this);
     this.showcreate = this.showcreate.bind(this);
+    this.showbids = this.showbids.bind(this);
+    this.showauctions = this.showauctions.bind(this);
+    this.clicked = this.clicked.bind(this);
   }
 
   componentDidMount = async () => {
@@ -97,16 +103,21 @@ class App extends Component {
     // Update state with the result.
     console.log(response);
   };
-
+  clicked(e) {
+    e.preventDefault();
+    this.state.web3.eth.request({ method: 'eth_requestAccounts' })
+    .then(res=>{
+      console.log(res);
+    })
+    .catch(err=>{
+      alert(
+        'something'
+      )
+    })
+  }
   activeListings = async () => {
     const { accounts, vickrey_contract, blind_contract, average_contract, showlistings } = this.state;
     console.log(accounts);
-    // await contract.methods.createListings(20010, "Mobile Phone", "One Plus 5T");
-    // await contract.methods.createListings(20011, "Mobile Phone", "One Plus 5T").call();
-    // let temp = await vickrey_contract.methods.getactiveauctions().call();
-    // let ret = await blind_contract.methods.getactiveauctions().call();
-    // temp = temp.concat(ret)
-    // console.log(temp);
     this.setState({ showlistings: !showlistings });
   };
 
@@ -115,8 +126,14 @@ class App extends Component {
     this.setState({ showcreate: !this.state.showcreate });
   };
 
-  cancelAuction = async () => {
+  showbids(e) {
+    e.preventDefault();
+    this.setState({ showbids: !this.state.showbids });
+  };
 
+  showauctions(e) {
+    e.preventDefault();
+    this.setState({ showauctions: !this.state.showauctions });
   };
 
   placeBid(e) {
@@ -169,11 +186,13 @@ class App extends Component {
     }
     return (
       <div className="App">
-        <NavBar />
+        <Navbr showbids={this.showbids}/>
         <h1>Smart Contract - Auction</h1>
-        {(!this.state.showcreate && !this.state.showlistings) &&
-          <CardGroup>
-            <Card style={{ width: '18rem' }}>
+        <br/>
+        {(!this.state.showcreate && !this.state.showlistings) && (!this.state.showbids && !this.state.showauctions) &&
+        <>
+        <CardGroup>
+            <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px'  }}>
               <Card.Img variant="top" src="auctionhouse.png" alt="te" />
               <Card.Body>
                 <Card.Title>Auction House</Card.Title>
@@ -183,25 +202,56 @@ class App extends Component {
                 <Button variant="success" onClick={this.activeListings}>Go to Auction House</Button>
               </Card.Body>
             </Card>
-            <Card style={{ width: '18rem' }}>
+            <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px'  }}>
               <Card.Img variant="top" src="listitem.png" alt="te" />
               <Card.Body>
                 <Card.Title>Create Auction Listing</Card.Title>
                 <Card.Text>
-                  Add your own listing to the auctions!
+                  Host your own auction and add it to the auctions!
                 </Card.Text>
                 <Button variant="warning" onClick={this.showcreate}>List your item</Button>
               </Card.Body>
             </Card>
-          </CardGroup>
+        </CardGroup>
+          <br/>
+        <CardGroup>
+        <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px' }}>
+            <Card.Img variant="top" src="auctionhouse.png" alt="te" />
+            <Card.Body>
+              <Card.Title>My Bids</Card.Title>
+              <Card.Text>
+                Look and manage your current bids!
+              </Card.Text>
+              <Button variant="primary" onClick={this.showbids}>My Bids</Button>
+            </Card.Body>
+          </Card>
+          <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px' }}>
+            <Card.Img variant="top" src="listitem.png" alt="te" />
+            <Card.Body>
+              <Card.Title>My Auctions</Card.Title>
+              <Card.Text>
+                Look and manage your auctions!
+              </Card.Text>
+              <Button variant="primary" onClick={this.showauctions}>My Auctions</Button>
+            </Card.Body>
+          </Card>
+        </CardGroup>
+        </>
         }
         {this.state.showlistings &&
-
-          <MarketPlace web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} />
+          <AuctionHouse web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} />
         }
         {
           this.state.showcreate &&
-          <ListAuctionItem handleSubmit={this.createAuction} handleChange={this.handleChange} />
+          <CreateAuctions handleSubmit={this.createAuction} handleChange={this.handleChange} />
+        }
+        {
+          this.state.showbids &&
+          <MyBids web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} />
+        }
+        {
+          this.state.showauctions &&
+          <MyAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} />
         }
 
       </div>

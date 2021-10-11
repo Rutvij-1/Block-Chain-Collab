@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { Button, InputGroup } from 'react-bootstrap';
 
-class ListAuctionItem extends Component {
+class CreateAuctions extends Component {
   constructor(props) {
     super(props)
   }
@@ -42,4 +42,4 @@ class ListAuctionItem extends Component {
     );
   }
 }
-export default ListAuctionItem;
+export default CreateAuctions;
