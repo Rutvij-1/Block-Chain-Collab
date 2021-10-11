@@ -47,6 +47,7 @@ class App extends Component {
             console.log(accounts);
             // Get the contract instances.
             const networkId = await web3.eth.net.getId();
+
             const deployedNetwork1 = VikreyAuction.networks[networkId];
             const instance1 = await new web3.eth.Contract(
                 VikreyAuction.abi,
@@ -90,21 +91,23 @@ class App extends Component {
     init = async () => {
         if (this.state.initialised === false)
             return
-        const { accounts, web3 } = this.state;
+        const { accounts, vickrey_contract, web3 } = this.state;
+        const accounts = await web3.eth.getAccounts();
         const response = await web3.eth.getBalance(accounts[0]);
         // Update state with the result.
         console.log(response);
-        this.setState({ storageValue: response });
     };
 
     activeListings = async () => {
         const { accounts, vickrey_contract, blind_contract, average_contract, showlistings } = this.state;
         console.log(accounts);
-        let vikreyAuctions = await vickrey_contract.methods.getactiveauctions().call();
-        let blindAuctions = await blind_contract.methods.getactiveauctions().call();
-        let averageAuctions = await average_contract.methods.getactiveauctions().call();
-        let auctions = [].concat(vikreyAuctions, blindAuctions, averageAuctions);
-        this.setState({ listings: auctions, showlistings: !showlistings });
+        // await contract.methods.createListings(20010, "Mobile Phone", "One Plus 5T");
+        // await contract.methods.createListings(20011, "Mobile Phone", "One Plus 5T").call();
+        // let temp = await vickrey_contract.methods.getactiveauctions().call();
+        // let ret = await blind_contract.methods.getactiveauctions().call();
+        // temp = temp.concat(ret)
+        // console.log(temp);
+        this.setState({ showlistings: !showlistings });
     };
 
     showcreate(e) {
