@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Card, Button, Spinner, CardGroup, Table, InputGroup } from "react-bootstrap";
-import VickreyAuction2 from "./contracts/VickreyAuction2.json"
+import VikreyAuction from "./contracts/VikreyAuction.json"
 import BlindAuction from "./contracts/BlindAuction.json"
 import getWeb3 from "./getWeb3";
 import NavBar from "./components/navbar";
@@ -46,9 +46,9 @@ class App extends Component {
             console.log(accounts);
             // Get the contract instances.
             const networkId = await web3.eth.net.getId();
-            const deployedNetwork1 = VickreyAuction2.networks[networkId];
+            const deployedNetwork1 = VikreyAuction.networks[networkId];
             const instance1 = await new web3.eth.Contract(
-                VickreyAuction2.abi,
+                VikreyAuction.abi,
                 deployedNetwork1 && deployedNetwork1.address,
             );
             instance1.options.address = deployedNetwork1.address
