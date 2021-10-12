@@ -89,7 +89,8 @@ class MyBids extends Component {
 					value: deposit
 				});
 			} catch (error) {
-				console.log(error);
+			alert(`Error: ${error.message}`)
+			console.log(error);
 			}
 		} else if (type === "Vikrey Auction") {
 			try {
@@ -106,7 +107,8 @@ class MyBids extends Component {
 					value: deposit
 				});
 			} catch (error) {
-				console.log(error);
+			alert(`Error: ${error.message}`)
+			console.log(error);
 			}
 		} else {
 			try {
@@ -123,7 +125,8 @@ class MyBids extends Component {
 					value: deposit
 				});
 			} catch (error) {
-				console.log(error);
+			alert(`Error: ${error.message}`)
+			console.log(error);
 			}
 		}
 		window.location.reload(false);
@@ -148,6 +151,7 @@ class MyBids extends Component {
 				value: deposit
 			});
 		} catch (error) {
+			alert(`Error: ${error.message}`)
 			console.log(error);
 		}
 	} else if (type === "Vikrey Auction") {
@@ -165,6 +169,7 @@ class MyBids extends Component {
 				value: deposit
 			});
 		} catch (error) {
+			alert(`Error: ${error.message}`)
 			console.log(error);
 		}
 	} else {
@@ -182,6 +187,7 @@ class MyBids extends Component {
 				value: deposit
 			});
 		} catch (error) {
+			alert(`Error: ${error.message}`)
 			console.log(error);
 		}
 	}

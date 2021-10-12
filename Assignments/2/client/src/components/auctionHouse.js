@@ -81,6 +81,7 @@ class AuctionHouse extends Component {
 					value: deposit
 				});
 			} catch (error) {
+				alert(`Error: ${error.message}`)
 				console.log(error);
 			}
 		} else if (type === "Vikrey Auction") {
@@ -98,6 +99,7 @@ class AuctionHouse extends Component {
 					value: deposit
 				});
 			} catch (error) {
+				alert(`Error: ${error.message}`)
 				console.log(error);
 			}
 		} else {
@@ -115,39 +117,41 @@ class AuctionHouse extends Component {
 					value: deposit
 				});
 			} catch (error) {
+				alert(`Error: ${error.message}`)
 				console.log(error);
 			}
 		}
-	window.location.reload(false);
+		window.location.reload(false);
 }
 
 	endAuction = (auction_id, type) => async(e) => {
 		e.preventDefault();
-		const { blind_contract, vickrey_contract, average_contract } = this.state;
+		const { blind_contract, vickrey_contract, average_contract, currentAccount } = this.state;
 		try {
 		  if (type === "Blind Auction") {
 			await blind_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
-			  from: this.state.currentAccount
+			  from: currentAccount
 			});
 		  } else if (type === "Vikrey Auction") {
 			await vickrey_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
-			  from: this.state.currentAccount
+			  from: currentAccount
 			});
 		  } else {
 			await average_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
-			  from: this.state.currentAccount
+			  from: currentAccount
 			});
 		  }
 		} catch (error) {
-		  console.log(error);
+			alert(`Error: ${error.message}`)
+			console.log(error);
 		}
-	window.location.reload(false);
+		window.location.reload(false);
 };
 
   revealBid = (auction_id, type) => async (e) => {
@@ -169,7 +173,8 @@ class AuctionHouse extends Component {
 				value: deposit
 			});
 		} catch (error) {
-			console.log(error);
+				alert(`Error: ${error.message}`)
+				console.log(error);
 		}
 	} else if (type === "Vikrey Auction") {
 		try {
@@ -186,7 +191,8 @@ class AuctionHouse extends Component {
 				value: deposit
 			});
 		} catch (error) {
-			console.log(error);
+				alert(`Error: ${error.message}`)
+				console.log(error);
 		}
 	} else {
 		try {
@@ -203,6 +209,7 @@ class AuctionHouse extends Component {
 				value: deposit
 			});
 		} catch (error) {
+			alert(`Error: ${error.message}`)
 			console.log(error);
 		}
 	}

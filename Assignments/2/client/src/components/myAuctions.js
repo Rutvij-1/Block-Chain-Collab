@@ -69,31 +69,31 @@ class MyAuctions extends Component {
 	
 	endAuction = (auction_id, type) => async(e) => {
 		e.preventDefault();
-		const { blind_contract, vickrey_contract, average_contract } = this.state;
+		const { blind_contract, vickrey_contract, average_contract, currentAccount } = this.state;
 		try {
 		  if (type === "Blind Auction") {
 			await blind_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
-			  from: this.state.currentAccount
+			  from: currentAccount
 			});
 		  } else if (type === "Vikrey Auction") {
 			await vickrey_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
-			  from: this.state.currentAccount
+			  from: currentAccount
 			});
 		  } else {
 			await average_contract.methods.auctionEnd(
 			  parseInt(auction_id)
 			).send({
-			  from: this.state.currentAccount
+			  from: currentAccount
 			});
 		  }
 		} catch (error) {
-		  console.log(error);
+			alert(`Error: ${error.message}`)
 		}
-	// window.location.reload(false);
+		window.location.reload(false);
 };
 
 	handleChange(e) {
