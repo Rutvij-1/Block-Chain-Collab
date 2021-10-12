@@ -146,12 +146,12 @@ class MyAuctions extends Component {
 										<td>{listing.reveal_deadline.toTimeString()}</td>
 										<td>
 										{ listing.ended ?
-											<p>Auction Ended Successfully</p>
+											<p>Auction Ended Successfully. Highest Bid :{listing.finalbid}</p>
 											:
 											(status === 'Active') ?
 											<Button variant="outline-success" disabled>Active</Button>
 											:
-											<Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="danger">End Auction</Button>
+											<Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="danger">{typeof(listing.beneficiary)} {typeof(this.state.currentAccount)}</Button>
 										}
 										</td>
 								</tr>

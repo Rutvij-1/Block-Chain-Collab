@@ -133,8 +133,8 @@ class MyBids extends Component {
 	}
 
   revealBid = (auction_id, type) => async(e) => {
-    e.preventDefault();
-	const { value, secret_key, deposit } = this.state.formData;
+	e.preventDefault();
+	const { value, secret_key } = this.state.formData;
 	const { blind_contract, vickrey_contract, average_contract, web3, currentAccount } = this.state
 	if (type === "Blind Auction") {
 		try {
@@ -148,7 +148,6 @@ class MyBids extends Component {
 				parseInt(auction_id)
 			).send({
 				from: currentAccount,
-				value: deposit
 			});
 		} catch (error) {
 			alert(`Error: ${error.message}`)
@@ -166,7 +165,6 @@ class MyBids extends Component {
 				parseInt(auction_id)
 			).send({
 				from: currentAccount,
-				value: deposit
 			});
 		} catch (error) {
 			alert(`Error: ${error.message}`)
@@ -184,7 +182,6 @@ class MyBids extends Component {
 				parseInt(auction_id)
 			).send({
 				from: currentAccount,
-				value: deposit
 			});
 		} catch (error) {
 			alert(`Error: ${error.message}`)
@@ -204,7 +201,7 @@ class MyBids extends Component {
   render() {
     return (
       <>
-		<h2>My Listed Bids</h2>
+		<h2>My Bids</h2>
 		<br/>
         <div style={{
           display: "flex",
@@ -218,8 +215,8 @@ class MyBids extends Component {
                 <td>Auction Type</td>
                 <td>Item Name</td>
                 <td>Item Description</td>
-                <td>Bidding Time</td>
-                <td>Bid Reveal Time</td>
+                <td>Bidding Deadline</td>
+                <td>Bid Reveal Deadline</td>
                 <td>Manage</td>
               </tr>
             </thead>
@@ -228,6 +225,9 @@ class MyBids extends Component {
                 let status = 'Active'
                 if (Date.now() > listing.bidding_deadline) {
                   status = 'Bidding Over'
+                }
+								if(Date.now() > listing.reveal_deadline) {
+                  status = 'Reveal Time Over'
                 }
                 if (listing.ended) {
                   status = 'Ended'
@@ -267,7 +267,6 @@ class MyBids extends Component {
 												<InputGroup>
 													<input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
 													<input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-													<input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposited Amount" />
 												</InputGroup>
 													<Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
 													</>
@@ -276,14 +275,21 @@ class MyBids extends Component {
 												}
 												</>
 												:
-												// Auction ended
-												<>
-												{ listing.highestBidder === this.state.currentAccount ?
-													<Button variant="success" disabled>Auction Won!</Button>
+												// Auction reveal deadline
+												(status === 'Reveal Time Over') ?
+													<Button variant="danger" disabled>Reveal Time Over</Button>
 													:
-													<Button variant="warning" disabled>Auction Ended</Button>
-												}
-												</>
+												// Auction ended
+												(status === 'Ended') ?
+													<>
+													{ listing.highestBidder === this.state.currentAccount ?
+														<Button variant="success" disabled>Auction Won! Bid Price: {listing.finalbid} </Button>
+														:
+														<Button variant="warning" disabled>Auction Ended. Won by: {listing.winner}</Button>
+													}
+													</>
+													:
+													<> Wait for Auction End </>
                       }
                     </td>
                   </tr>

@@ -156,7 +156,7 @@ class AuctionHouse extends Component {
 
   revealBid = (auction_id, type) => async (e) => {
     e.preventDefault();
-	const { value, secret_key, deposit } = this.state.formData;
+	const { value, secret_key } = this.state.formData;
 	const { blind_contract, vickrey_contract, average_contract, web3, currentAccount } = this.state
 	if (type === "Blind Auction") {
 		try {
@@ -170,7 +170,6 @@ class AuctionHouse extends Component {
 				parseInt(auction_id)
 			).send({
 				from: currentAccount,
-				value: deposit
 			});
 		} catch (error) {
 				alert(`Error: ${error.message}`)
@@ -188,7 +187,6 @@ class AuctionHouse extends Component {
 				parseInt(auction_id)
 			).send({
 				from: currentAccount,
-				value: deposit
 			});
 		} catch (error) {
 				alert(`Error: ${error.message}`)
@@ -206,7 +204,6 @@ class AuctionHouse extends Component {
 				parseInt(auction_id)
 			).send({
 				from: currentAccount,
-				value: deposit
 			});
 		} catch (error) {
 			alert(`Error: ${error.message}`)
@@ -239,8 +236,8 @@ class AuctionHouse extends Component {
 								<td>Auction Type</td>
 								<td>Item Name</td>
 								<td>Item Description</td>
-								<td>Bidding Time</td>
-								<td>Bid Reveal Time</td>
+								<td>Bidding Deadline</td>
+								<td>Bid Reveal Deadline</td>
 								<td>Manage</td>
 							</tr>
 						</thead>
@@ -294,16 +291,18 @@ class AuctionHouse extends Component {
 																		<InputGroup>
 																			<input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
 																			<input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-																			<input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposited Amount" />
 																		</InputGroup>
-																												<Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
+																			<Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
 																			</>
                                       :
-                                      <Button variant="warning" disabled>Bidding Time Over</Button>
+                                      <Button variant="danger" disabled>Bidding Time Over</Button>
                                     }
                                   </>
                                     :
-                                    <> </>
+																		(status === 'Reveal Time Over') ?
+																		<Button variant="danger" disabled>Reveal Time Over</Button>
+																		:
+                                    <> Wait for Auction End </>
                                 }
 															</td>
 													</tr>
