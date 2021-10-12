@@ -70,6 +70,7 @@ class MyAuctions extends Component {
   endAuction = (auction_id, type) => async (e) => {
     e.preventDefault();
     const { blind_contract, vickrey_contract, average_contract } = this.state;
+    console.log(auction_id, type, this.state.currentAccount);
     try {
       if (type === "Blind Auction") {
         await blind_contract.methods.auctionEnd(
@@ -147,12 +148,12 @@ class MyAuctions extends Component {
                     <td>{listing.reveal_deadline.toTimeString()}</td>
                     <td>
                       {listing.ended ?
-                        <p>Auction Ended Successfully. Highest Bid :{listing.finalbid}</p>
+                        <p>Auction Ended Successfully. Winning Bid :{listing.finalBid}</p>
                         :
                         (status === 'Active') ?
                           <Button variant="outline-success" disabled>Active</Button>
                           :
-                          <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="danger">{typeof (listing.beneficiary)} {typeof (this.state.currentAccount)}</Button>
+                          <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
                       }
                     </td>
                   </tr>

@@ -29,6 +29,7 @@ contract BlindAuction {
     /// @param revealedBidders the array to store bidders who reveal their bid to return their due after auction is over
     /// @param pendingReturns the value to return to each bidder
     /// @param bidded the boolean to track which addresses have bidded.
+    /// @param revealed the boolean to track which addresses have revealed.
     struct auctions {
         uint256 auction_id;
         address payable beneficiary;
@@ -45,6 +46,7 @@ contract BlindAuction {
         // Allowed withdrawals of previous bids
         mapping(address => uint256) pendingReturns;
         mapping(address => bool) bidded;
+        mapping(address => bool) revealed;
     }
 
     /// @dev structure for each display active Auction Listings
@@ -56,6 +58,7 @@ contract BlindAuction {
     /// @param item_name shows name of the item
     /// @param item_description description of the item
     /// @param bidplaced bool to tell whether the person calling the function bidded or not
+    /// @param revealed bool to tell whether the person calling the revealed their bid or not
     struct auction_active_listings {
         uint256 auction_id;
         address payable beneficiary;
@@ -65,6 +68,7 @@ contract BlindAuction {
         string item_name;
         string item_description;
         bool bidplaced;
+        bool revealed;
     }
 
     /// @dev structure for each display Auction Listings
@@ -77,6 +81,7 @@ contract BlindAuction {
     /// @param item_name shows name of the item
     /// @param item_description description of the item
     /// @param bidplaced bool to tell whether the person calling the function bidded or not
+    /// @param revealed bool to tell whether the person calling the revealed their bid or not
     /// @param finalBid the final price at which the item was sold
     struct auction_all_listings {
         uint256 auction_id;
@@ -88,6 +93,7 @@ contract BlindAuction {
         string item_name;
         string item_description;
         bool bidplaced;
+        bool revealed;
         uint256 finalBid;
     }
 
@@ -362,7 +368,8 @@ contract BlindAuction {
                     currentauction.ended,
                     currentauction.item_name,
                     currentauction.item_description,
-                    currentauction.bidded[msg.sender]
+                    currentauction.bidded[msg.sender],
+                    currentauction.revealed[msg.sender]
                 );
                 currentIndex += 1;
             }
@@ -393,6 +400,7 @@ contract BlindAuction {
                 currentauction.item_name,
                 currentauction.item_description,
                 currentauction.bidded[msg.sender],
+                currentauction.revealed[msg.sender],
                 currentauction.highestBid
             );
         }
@@ -444,6 +452,7 @@ contract BlindAuction {
             emit BidRevealFailed(auction_id, msg.sender);
         } else {
             Auctions[auction_id].revealedBidders.push(msg.sender);
+            Auctions[auction_id].revealed[msg.sender] = true;
             refund += bidToCheck.deposit;
             if (bidToCheck.deposit >= value) {
                 if (placeBid(auction_id, msg.sender, value)) refund -= value;
