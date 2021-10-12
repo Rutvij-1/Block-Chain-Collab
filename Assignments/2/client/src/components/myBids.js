@@ -59,13 +59,11 @@ class MyBids extends Component {
         }
       }
       offSet += averageAuctions.length;
-      // let auctions = [].concat(blindAuctions, vikreyAuctions, averageAuctions);
       this.setState({ listings: mylist });
 
     } catch (error) {
       alert(`Loading...`);
-      console.error(error);
-    }
+		}
   };
 
   makeBid = (auction_id, type) => async (e) => {
@@ -73,7 +71,6 @@ class MyBids extends Component {
     const { value, secret_key, deposit } = this.state.formData;
     const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
     this.setState({ makebid: !this.state.makebid });
-    console.log(parseInt(Date.now() / 1000));
     try {
       if (type === "Blind Auction") {
         await blind_contract.methods.bid(
@@ -115,10 +112,9 @@ class MyBids extends Component {
           value: deposit
         });
       }
-      window.location.reload(false);
+			window.location.reload(false);
     } catch (error) {
-      alert(`Error: ${error.message}`);
-      console.log(error);
+			alert(`Error: ${error.message}`);
     }
   }
 
@@ -152,10 +148,9 @@ class MyBids extends Component {
           from: currentAccount
         });
       }
-      window.location.reload(false);
+			window.location.reload(false);
     } catch (error) {
-      alert(`Error: ${error.message}`);
-      console.log(error);
+			alert(`Error: ${error.message}`);
     }
   };
 
@@ -213,7 +208,7 @@ class MyBids extends Component {
                         <>
                           {listing.bidplaced === true ?
                             <div>
-                              <Button variant="info" disabled>Bid Placed</Button>
+                              <Button variant="info" disabled>Bid Already Placed</Button>
                             </div>
                             :
                             <div>
@@ -222,7 +217,7 @@ class MyBids extends Component {
                                 <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
                                 <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount" />
                               </InputGroup>
-                              <Button variant="warning" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
+                              <Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
                             </div>
                           }
                         </>
@@ -231,29 +226,35 @@ class MyBids extends Component {
                         (status === 'Bidding Over') ?
                           <>
                             {listing.bidplaced === true ?
+															listing.revealed?
+                              <Button variant="info" disabled>Revealed</Button>
+                              :
                               <>
                                 <InputGroup>
                                   <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
                                   <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
                                 </InputGroup>
-                                <Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
+                                <Button variant="primary" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
                               </>
-                              :
-                              <Button variant="warning" disabled>Bidding Time Over</Button>
+															:
+                              <Button variant="danger" disabled>Bidding Time Over</Button>
                             }
                           </>
                           :
                           // Auction reveal deadline
                           (status === 'Reveal Time Over') ?
-                            <Button variant="danger" disabled>Reveal Time Over</Button>
+                            <Button variant="danger" disabled>Reveal Time Over. <br/>Wait for auction end.</Button>
                             :
                             // Auction ended
                             (status === 'Ended') ?
                               <>
                                 {listing.highestBidder === this.state.currentAccount ?
-                                  <Button variant="success" disabled>Auction Won! Bid Price: {listing.finalbid} </Button>
+                                  <Button variant="success" disabled>Auction Won! <br/> 
+																	Bid Price: {listing.finalBid>0?listing.finalBid:"NA"} </Button>
                                   :
-                                  <Button variant="warning" disabled>Auction Ended. Won by: {listing.winner}</Button>
+                                  <Button variant="info" disabled>Auction Ended. <br/>
+																	Won by: {listing.winner?listing.winner:"None"} <br/>
+																	Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</Button>
                                 }
                               </>
                               :

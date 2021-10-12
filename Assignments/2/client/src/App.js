@@ -208,7 +208,7 @@ class App extends Component {
     return (
       <div className="App">
         <Navbr showauctions={this.showauctions} activeListings={this.activeListings} showcreate={this.showcreate} showbids={this.showbids}/>
-        <h1>Smart Contract - Auction</h1>
+        <h1>Smart Auction</h1>
         <br/>
         {(!this.state.showcreate && !this.state.showlistings) && (!this.state.showbids && !this.state.showauctions) &&
         <>
