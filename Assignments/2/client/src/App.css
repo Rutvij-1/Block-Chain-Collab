@@ -30,6 +30,7 @@
 }
 
 body{
+  background-color:rgb(16, 167, 190);
   font-family: 'Lato', sans-serif;
 }
 
@@ -60,20 +61,18 @@ h5 {
 }
 
 .img{
-  margin-top: 70px;
+  margin-top: 40px;
+  margin-bottom: 40px;
   width: 390px;
-  height: 450px;
+  height: 500px;
 }
 
 .top{
   margin-top: 0px !important;
 }
 
-body {
-  background-color:rgb(16, 167, 190)
-}
 .card-img-top {
   width: 75%;
-  height: 12vw;
-  object-fit: cover;
+  height: 17vw;
+  object-fit: fill;
 }

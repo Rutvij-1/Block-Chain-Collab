@@ -224,6 +224,7 @@ class AuctionHouse extends Component {
 		return (
 			<>
 				<h2>The active listings are:</h2>
+				<br/>
 				<div style={{
 					display: "flex",
 					justifyContent: "center",

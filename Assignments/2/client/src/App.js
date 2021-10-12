@@ -220,7 +220,7 @@ class App extends Component {
                 <Card.Text>
                   Have a look at the active listings in the auction house!
                 </Card.Text>
-                <Button variant="success" onClick={this.activeListings}>Go to Auction House</Button>
+                <Button variant="primary" onClick={this.activeListings}>Go to Auction House</Button>
               </Card.Body>
             </Card>
             <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px'  }}>
@@ -236,16 +236,6 @@ class App extends Component {
         </CardGroup>
           <br/>
         <CardGroup>
-        <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px' }}>
-            <Card.Img variant="top" src="mybids.png" alt="te" />
-            <Card.Body>
-              <Card.Title>My Bids</Card.Title>
-              <Card.Text>
-                Look and manage your current bids!
-              </Card.Text>
-              <Button variant="primary" onClick={this.showbids}>My Bids</Button>
-            </Card.Body>
-          </Card>
           <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px' }}>
             <Card.Img variant="top" src="myauctions.png" alt="te" />
             <Card.Body>
@@ -254,6 +244,16 @@ class App extends Component {
                 Look and manage your auctions!
               </Card.Text>
               <Button variant="primary" onClick={this.showauctions}>My Auctions</Button>
+            </Card.Body>
+          </Card>
+        <Card style={{ width: '18rem', marginLeft: '10px', marginRight: '10px' }}>
+            <Card.Img variant="top" src="mybids.png" alt="te" />
+            <Card.Body>
+              <Card.Title>My Bids</Card.Title>
+              <Card.Text>
+                Look and manage your current bids!
+              </Card.Text>
+              <Button variant="primary" onClick={this.showbids}>My Bids</Button>
             </Card.Body>
           </Card>
         </CardGroup>
