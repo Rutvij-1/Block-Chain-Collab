@@ -26,6 +26,7 @@ contract BlindAuction {
     /// @param sold bool to denote whether the item is sold or not
     /// @param highestBidder address of the highest bidder
     /// @param highestBid value of the highest bid
+    /// @param revealedBidders the array to store bidders who reveal their bid to return their due after auction is over
     /// @param pendingReturns the value to return to each bidder
     /// @param bidded the boolean to track which addresses have bidded.
     struct auctions {
@@ -48,13 +49,14 @@ contract BlindAuction {
 
     /// @dev structure for each display active Auction Listings
     /// @param auction_id unique id for the items
+    /// @param beneficiary address of the owner of item to be auctioned
     /// @param biddingEnd time the bidding end
     /// @param revealEnd time when reveal period is over
     /// @param ended shows the auction ended
     /// @param item_name shows name of the item
     /// @param item_description description of the item
-
-    struct auction_listings {
+    /// @param bidplaced bool to tell whether the person calling the function bidded or not
+    struct auction_active_listings {
         uint256 auction_id;
         address payable beneficiary;
         uint256 biddingEnd;
@@ -63,14 +65,30 @@ contract BlindAuction {
         string item_name;
         string item_description;
         bool bidplaced;
+    }
 
-        //bool sold;
-        //address highestBidder;
-        //uint highestBid;
-
-        //mapping(address => Bid) bids;
-        // Allowed withdrawals of previous bids
-        //mapping(address => uint) pendingReturns;
+    /// @dev structure for each display Auction Listings
+    /// @param auction_id unique id for the items
+    /// @param beneficiary address of the owner of item to be auctioned
+    /// @param winner address of the winner of the auction
+    /// @param biddingEnd time the bidding end
+    /// @param revealEnd time when reveal period is over
+    /// @param ended shows the auction ended
+    /// @param item_name shows name of the item
+    /// @param item_description description of the item
+    /// @param bidplaced bool to tell whether the person calling the function bidded or not
+    /// @param finalBid the final price at which the item was sold
+    struct auction_all_listings {
+        uint256 auction_id;
+        address payable beneficiary;
+        address payable winner;
+        uint256 biddingEnd;
+        uint256 revealEnd;
+        bool ended;
+        string item_name;
+        string item_description;
+        bool bidplaced;
+        uint256 finalBid;
     }
 
     // Errors that describe failures.
@@ -326,16 +344,17 @@ contract BlindAuction {
     function getactiveauctions()
         external
         view
-        returns (auction_listings[] memory)
+        returns (auction_active_listings[] memory)
     {
         uint256 currentIndex = 0;
-        auction_listings[] memory active_auctions = new auction_listings[](
-            activeauctions
-        );
+        auction_active_listings[]
+            memory active_auctions = new auction_active_listings[](
+                activeauctions
+            );
         for (uint256 i = 0; i < current_auction_id; i++) {
             if (Auctions[i].ended == false) {
                 auctions storage currentauction = Auctions[i];
-                active_auctions[currentIndex] = auction_listings(
+                active_auctions[currentIndex] = auction_active_listings(
                     currentauction.auction_id,
                     currentauction.beneficiary,
                     currentauction.biddingEnd,
@@ -345,10 +364,39 @@ contract BlindAuction {
                     currentauction.item_description,
                     currentauction.bidded[msg.sender]
                 );
+                currentIndex += 1;
             }
-            currentIndex += 1;
         }
         return active_auctions;
+    }
+
+    // function to to get a list of all auctions
+    /// @notice Get all the auction listings items in the market
+    /// @return a list of all auction listings
+    function getallauctions()
+        external
+        view
+        returns (auction_all_listings[] memory)
+    {
+        auction_all_listings[] memory all_auctions = new auction_all_listings[](
+            current_auction_id
+        );
+        for (uint256 i = 0; i < current_auction_id; i++) {
+            auctions storage currentauction = Auctions[i];
+            all_auctions[i] = auction_all_listings(
+                currentauction.auction_id,
+                currentauction.beneficiary,
+                currentauction.highestBidder,
+                currentauction.biddingEnd,
+                currentauction.revealEnd,
+                currentauction.ended,
+                currentauction.item_name,
+                currentauction.item_description,
+                currentauction.bidded[msg.sender],
+                currentauction.highestBid
+            );
+        }
+        return all_auctions;
     }
 
     // function that can be used to bid in an auction
@@ -483,6 +531,7 @@ contract BlindAuction {
             );
             Auctions[auction_id].ended = true;
             Auctions[auction_id].sold = true;
+            activeauctions -= 1;
             for (
                 uint256 i = 0;
                 i < Auctions[auction_id].revealedBidders.length;
