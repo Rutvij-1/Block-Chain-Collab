@@ -62,15 +62,13 @@ class MyAuctions extends Component {
 
     } catch (error) {
       alert(`Loading...`);
-      console.error(error);
-    }
+		}
   };
 
 
   endAuction = (auction_id, type) => async (e) => {
     e.preventDefault();
     const { blind_contract, vickrey_contract, average_contract } = this.state;
-    console.log(auction_id, type, this.state.currentAccount);
     try {
       if (type === "Blind Auction") {
         await blind_contract.methods.auctionEnd(
@@ -91,10 +89,9 @@ class MyAuctions extends Component {
           from: this.state.currentAccount
         });
       }
-      window.location.reload(false);
+			window.location.reload(false);
     } catch (error) {
-      alert(`Error: ${error.message}`);
-      console.log(error);
+			alert(`Error: ${error.message}`);
     }
   };
 
@@ -130,9 +127,8 @@ class MyAuctions extends Component {
             <tbody>
               {this.state.listings.map(listing => {
                 let status = 'Active'
-                let sold = "False"
-                if (Date.now() > listing.bidding_deadline) {
-                  status = 'Bidding Over'
+                if (Date.now() > listing.reveal_deadline) {
+                  status = 'Reveal Over'
                 }
                 if (Date.now() > listing.reveal_deadline) {
                   status = 'Reveal Time Over'
@@ -140,7 +136,6 @@ class MyAuctions extends Component {
                 console.log(Date.now(), listing.reveal_deadline, Date.now() > listing.reveal_deadline, status);
                 if (listing.ended) {
                   status = 'Ended'
-                  sold = "True"
                 }
                 return (
                   <tr key={listing.new_auction_id}>
@@ -152,7 +147,7 @@ class MyAuctions extends Component {
                     <td>{listing.reveal_deadline.toTimeString()}</td>
                     <td>
                       {listing.ended ?
-                        <p>Auction Ended Successfully. Winning Bid :{listing.finalBid}</p>
+                        <p>Auction Ended Successfully. <br/> Winner: {listing.highestBidder? listing.highestBidder: "None"} <br/> Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</p>
                         :
                         (status === 'Active') ?
                           <Button variant="outline-success" disabled>Bidding Period</Button>

@@ -28,6 +28,7 @@ class AuctionHouse extends Component {
       let offSet = 1000;
       let blindAuctions = await this.props.blind_contract.methods.getactiveauctions().call({ from: this.props.account });
       for (let i = 0; i < blindAuctions.length; ++i) {
+        console.log(blindAuctions[i]["ended"]);
         blindAuctions[i]["type"] = "Blind Auction";
         blindAuctions[i]["new_auction_id"] = parseInt(blindAuctions[i]["auction_id"]) + offSet;
         blindAuctions[i]["bidding_deadline"] = new Date(blindAuctions[i]["biddingEnd"] * 1000);
@@ -56,7 +57,6 @@ class AuctionHouse extends Component {
 
     } catch (error) {
       alert(`Loading...`);
-      console.error(error);
     }
   };
 
@@ -65,7 +65,6 @@ class AuctionHouse extends Component {
     const { value, secret_key, deposit } = this.state.formData;
     const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
     this.setState({ makebid: !this.state.makebid });
-    console.log(parseInt(Date.now() / 1000));
     try {
       if (type === "Blind Auction") {
         await blind_contract.methods.bid(
@@ -110,7 +109,6 @@ class AuctionHouse extends Component {
       window.location.reload(false);
     } catch (error) {
       alert(`Error: ${error.message}`);
-      console.log(error);
     }
   }
 
@@ -140,7 +138,6 @@ class AuctionHouse extends Component {
       window.location.reload(false);
     } catch (error) {
       alert(`Error: ${error.message}`);
-      console.log(error);
     }
   };
 
@@ -177,7 +174,6 @@ class AuctionHouse extends Component {
       window.location.reload(false);
     } catch (error) {
       alert(`Error: ${error.message}`);
-      console.log(error);
     }
   };
 
@@ -192,6 +188,7 @@ class AuctionHouse extends Component {
     return (
       <>
         <h2>The active listings are:</h2>
+        <br />
         <div style={{
           display: "flex",
           justifyContent: "center",
@@ -238,7 +235,7 @@ class AuctionHouse extends Component {
                           <>
                             {listing.bidplaced === true ?
                               <div>
-                                <Button variant="info" disabled>Bid Placed</Button>
+                                <Button variant="info" disabled>Bid Already Placed</Button>
                               </div>
                               :
                               <div>
@@ -247,28 +244,32 @@ class AuctionHouse extends Component {
                                   <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
                                   <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount" />
                                 </InputGroup>
-                                <Button variant="warning" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
+                                <Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
                               </div>
                             }
                           </>
                           :
                           (status === 'Bidding Over') ?
                             <>
+
                               {listing.bidplaced === true ?
-                                <>
-                                  <InputGroup>
-                                    <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
-                                    <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-                                  </InputGroup>
-                                  <Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
-                                </>
+                                listing.revealed ?
+                                  <Button variant="info" disabled>Revealed</Button>
+                                  :
+                                  <>
+                                    <InputGroup>
+                                      <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
+                                      <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
+                                    </InputGroup>
+                                    <Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
+                                  </>
                                 :
                                 <Button variant="danger" disabled>Bidding Time Over</Button>
                               }
                             </>
                             :
                             (status === 'Reveal Time Over') ?
-                              <Button variant="danger" disabled>Reveal Time Over</Button>
+                              <Button variant="danger" disabled>Reveal Time Over. <br />Wait for auction end.</Button>
                               :
                               <> Wait for Auction End </>
                       }
