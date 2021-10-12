@@ -117,6 +117,7 @@ class MyBids extends Component {
       }
       window.location.reload(false);
     } catch (error) {
+      alert(`Error: ${error.message}`);
       console.log(error);
     }
   }
@@ -153,6 +154,7 @@ class MyBids extends Component {
       }
       window.location.reload(false);
     } catch (error) {
+      alert(`Error: ${error.message}`);
       console.log(error);
     }
   };
@@ -167,7 +169,7 @@ class MyBids extends Component {
   render() {
     return (
       <>
-        <h2>My Listed Bids</h2>
+        <h2>My Bids</h2>
         <br />
         <div style={{
           display: "flex",
@@ -181,8 +183,8 @@ class MyBids extends Component {
                 <td>Auction Type</td>
                 <td>Item Name</td>
                 <td>Item Description</td>
-                <td>Bidding Time</td>
-                <td>Bid Reveal Time</td>
+                <td>Bidding Deadline</td>
+                <td>Bid Reveal Deadline</td>
                 <td>Manage</td>
               </tr>
             </thead>
@@ -191,6 +193,9 @@ class MyBids extends Component {
                 let status = 'Active'
                 if (Date.now() > listing.bidding_deadline) {
                   status = 'Bidding Over'
+                }
+                if (Date.now() > listing.reveal_deadline) {
+                  status = 'Reveal Time Over'
                 }
                 if (listing.ended) {
                   status = 'Ended'
@@ -238,14 +243,21 @@ class MyBids extends Component {
                             }
                           </>
                           :
-                          // Auction ended
-                          <>
-                            {listing.highestBidder === this.state.currentAccount ?
-                              <Button variant="success" disabled>Auction Won!</Button>
+                          // Auction reveal deadline
+                          (status === 'Reveal Time Over') ?
+                            <Button variant="danger" disabled>Reveal Time Over</Button>
+                            :
+                            // Auction ended
+                            (status === 'Ended') ?
+                              <>
+                                {listing.highestBidder === this.state.currentAccount ?
+                                  <Button variant="success" disabled>Auction Won! Bid Price: {listing.finalbid} </Button>
+                                  :
+                                  <Button variant="warning" disabled>Auction Ended. Won by: {listing.winner}</Button>
+                                }
+                              </>
                               :
-                              <Button variant="warning" disabled>Auction Ended</Button>
-                            }
-                          </>
+                              <> Wait for Auction End </>
                       }
                     </td>
                   </tr>

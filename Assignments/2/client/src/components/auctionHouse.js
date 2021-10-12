@@ -109,6 +109,7 @@ class AuctionHouse extends Component {
       }
       window.location.reload(false);
     } catch (error) {
+      alert(`Error: ${error.message}`);
       console.log(error);
     }
   }
@@ -138,6 +139,7 @@ class AuctionHouse extends Component {
       }
       window.location.reload(false);
     } catch (error) {
+      alert(`Error: ${error.message}`);
       console.log(error);
     }
   };
@@ -174,6 +176,7 @@ class AuctionHouse extends Component {
       }
       window.location.reload(false);
     } catch (error) {
+      alert(`Error: ${error.message}`);
       console.log(error);
     }
   };
@@ -201,8 +204,8 @@ class AuctionHouse extends Component {
                 <td>Auction Type</td>
                 <td>Item Name</td>
                 <td>Item Description</td>
-                <td>Bidding Time</td>
-                <td>Bid Reveal Time</td>
+                <td>Bidding Deadline</td>
+                <td>Bid Reveal Deadline</td>
                 <td>Manage</td>
               </tr>
             </thead>
@@ -260,11 +263,14 @@ class AuctionHouse extends Component {
                                   <Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
                                 </>
                                 :
-                                <Button variant="warning" disabled>Bidding Time Over</Button>
+                                <Button variant="danger" disabled>Bidding Time Over</Button>
                               }
                             </>
                             :
-                            <> </>
+                            (status === 'Reveal Time Over') ?
+                              <Button variant="danger" disabled>Reveal Time Over</Button>
+                              :
+                              <> Wait for Auction End </>
                       }
                     </td>
                   </tr>
