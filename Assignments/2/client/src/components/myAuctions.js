@@ -24,10 +24,9 @@ class MyAuctions extends Component {
 			});
 			let mylist = []
 			let offSet = 1000;
-			let blindAuctions = await this.props.blind_contract.methods.getactiveauctions().call({ from: this.props.account });
+			let blindAuctions = await this.props.blind_contract.methods.getallauctions().call({ from: this.props.account });
 			for (let i = 0; i < blindAuctions.length; ++i) {
-				if(blindAuctions[i]["beneficiary"] == this.props.account)
-				{
+				if(blindAuctions[i]["beneficiary"] == this.props.account){
 					blindAuctions[i]["type"] = "Blind Auction";
 					blindAuctions[i]["new_auction_id"] = parseInt(blindAuctions[i]["auction_id"]) + offSet;
 					blindAuctions[i]["bidding_deadline"] = new Date(blindAuctions[i]["biddingEnd"] * 1000);
@@ -36,9 +35,9 @@ class MyAuctions extends Component {
 				}
 			}
 			offSet += mylist.length;
-			let vikreyAuctions = await this.props.vickrey_contract.methods.getactiveauctions().call({ from: this.props.account });
+			let vikreyAuctions = await this.props.vickrey_contract.methods.getallauctions().call({ from: this.props.account });
 			for (let i = 0; i < vikreyAuctions.length; ++i) {
-				if(blindAuctions[i]["beneficiary"] == this.props.account){
+				if(vikreyAuctions[i]["beneficiary"] == this.props.account){
 					vikreyAuctions[i]["type"] = "Vikrey Auction";
 					vikreyAuctions[i]["new_auction_id"] = parseInt(vikreyAuctions[i]["auction_id"]) + offSet;
 					vikreyAuctions[i]["bidding_deadline"] = new Date(vikreyAuctions[i]["biddingEnd"] * 1000);
@@ -48,9 +47,9 @@ class MyAuctions extends Component {
 			}
 			// let auctions = blindAuctions.concat(vikreyAuctions);
 			offSet += mylist.length;
-			let averageAuctions = await this.props.average_contract.methods.getactiveauctions().call({ from: this.props.account });
+			let averageAuctions = await this.props.average_contract.methods.getallauctions().call({ from: this.props.account });
 			for (let i = 0; i < averageAuctions.length; ++i) {
-				if(blindAuctions[i]["beneficiary"] == this.props.account){
+				if(averageAuctions[i]["beneficiary"] == this.props.account){
 					averageAuctions[i]["type"] = "Average Price Auction";
 					averageAuctions[i]["new_auction_id"] = parseInt(averageAuctions[i]["auction_id"]) + offSet;
 					averageAuctions[i]["bidding_deadline"] = new Date(averageAuctions[i]["biddingEnd"] * 1000);
@@ -59,7 +58,6 @@ class MyAuctions extends Component {
 				}
 			}
 			offSet += averageAuctions.length;
-			// let auctions = [].concat(blindAuctions, vikreyAuctions, averageAuctions);
 			this.setState({ listings: mylist});
 
 		} catch (error) {
@@ -95,7 +93,7 @@ class MyAuctions extends Component {
 		} catch (error) {
 		  console.log(error);
 		}
-	window.location.reload(false);
+	// window.location.reload(false);
 };
 
 	handleChange(e) {
@@ -122,8 +120,8 @@ class MyAuctions extends Component {
 								<td>Auction Type</td>
 								<td>Item Name</td>
 								<td>Item Description</td>
-								<td>Bidding Time</td>
-								<td>Bid Reveal Time</td>
+								<td>Bidding Deadline</td>
+								<td>Bid Reveal Deadline</td>
 								<td>Manage</td>
 							</tr>
 						</thead>
@@ -131,82 +129,39 @@ class MyAuctions extends Component {
 							{this.state.listings.map(listing => {
 								let status = 'Active'
 								let sold = "False"
-                if(Date.now() > listing.bidding_deadline) {
-                  status = 'Bidding Over'
-                }
-								if (listing.ended) {
-									status = 'Ended'
-									sold = "True"
-								}
-											return (
-													<tr key={listing.new_auction_id}>
-															<td>{listing.new_auction_id}</td>
-															<td>{listing.type}</td>
-															<td>{listing.item_name}</td>
-															<td>{listing.item_description}</td>
-															<td>{listing.bidding_deadline.toTimeString()}</td>
-															<td>{listing.reveal_deadline.toTimeString()}</td>
-															<td>
-																	{listing.beneficiary === this.state.currentAccount ? 
-                                  (status === 'Ended') ?
-                                  <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="secondary">End Auction</Button>
-                                  :
-                                  <Button variant="success">Active</Button>
-                                  :
-                                  (status === 'Active') ?
-                                  <>
-                                    {listing.bidplaced === true ?
-                                    <div>
-                                      <Button variant="info" disabled>Bid Placed</Button>
-                                    </div>
-                                    :
-                                    <div>
-                                        <InputGroup>
-                                            <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
-                                            <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-                                            <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount" />
-                                        </InputGroup>
-                                        <Button variant="warning" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
-                                    </div>
-                                    }
-                                  </>
-                                  :
-                                  (status === 'Bidding Over') ?
-                                  <>
-                                    {listing.bidplaced === true ?
-									<>
-									<InputGroup>
-										<input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
-										<input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-										<input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposited Amount" />
-									</InputGroup>
-                                      <Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
-									  </>
-                                      :
-                                      <Button variant="warning" disabled>Bidding Time Over</Button>
-                                    }
-                                  </>
-                                    :
-                                    <> </>
-                                    // (status === 'Ended') ?
-                                    // <>
-                                    //   {listing.bidplaced === true ?
-                                    //     <Button variant="info" onClick={this.withdrawDeposit(listing.auction_id, listing.type)}>Withdraw Bid</Button>
-                                    //     :
-                                    //     <Button variant="warning" disabled>Auction Ended</Button>
-                                    //   }
-                                    // </>
-                                    // :
-                                }
-															</td>
-													</tr>
-											)
-										})}
-									</tbody>
-								</Table>
-							</div>
-						</>
-				);
-		}
+							if(Date.now() > listing.bidding_deadline) {
+								status = 'Bidding Over'
+							}
+							if (listing.ended) {
+								status = 'Ended'
+								sold = "True"
+							}
+							return (
+								<tr key={listing.new_auction_id}>
+									<td>{listing.new_auction_id}</td>
+										<td>{listing.type}</td>
+										<td>{listing.item_name}</td>
+										<td>{listing.item_description}</td>
+										<td>{listing.bidding_deadline.toTimeString()}</td>
+										<td>{listing.reveal_deadline.toTimeString()}</td>
+										<td>
+										{ listing.ended ?
+											<p>Auction Ended Successfully</p>
+											:
+											(status === 'Active') ?
+											<Button variant="outline-success" disabled>Active</Button>
+											:
+											<Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="danger">End Auction</Button>
+										}
+										</td>
+								</tr>
+							)
+						})}
+					</tbody>
+				</Table>
+			</div>
+		</>
+		);
+	}
 }
 export default MyAuctions;

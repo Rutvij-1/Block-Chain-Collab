@@ -244,10 +244,9 @@ class AuctionHouse extends Component {
                 if(Date.now() > listing.bidding_deadline) {
                   status = 'Bidding Over'
                 }
-								if (listing.ended) {
-									status = 'Ended'
-									sold = "True"
-								}
+								if(Date.now() > listing.reveal_deadline) {
+                  status = 'Reveal Time Over'
+                }
 											return (
 													<tr key={listing.new_auction_id}>
 															<td>{listing.new_auction_id}</td>
@@ -258,10 +257,10 @@ class AuctionHouse extends Component {
 															<td>{listing.reveal_deadline.toTimeString()}</td>
 															<td>
 																	{listing.beneficiary === this.state.currentAccount ? 
-                                  (status === 'Ended') ?
+                                  (status === 'Reveal Time Over') ?
                                   <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="secondary">End Auction</Button>
                                   :
-                                  <Button variant="success">Active</Button>
+																	<Button variant="outline-success" disabled>Active</Button>
                                   :
                                   (status === 'Active') ?
                                   <>
@@ -284,29 +283,20 @@ class AuctionHouse extends Component {
                                   (status === 'Bidding Over') ?
                                   <>
                                     {listing.bidplaced === true ?
-									<>
-									<InputGroup>
-										<input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
-										<input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-										<input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposited Amount" />
-									</InputGroup>
-                                      <Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
-									  </>
+																		<>
+																		<InputGroup>
+																			<input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
+																			<input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
+																			<input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposited Amount" />
+																		</InputGroup>
+																												<Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
+																			</>
                                       :
                                       <Button variant="warning" disabled>Bidding Time Over</Button>
                                     }
                                   </>
                                     :
                                     <> </>
-                                    // (status === 'Ended') ?
-                                    // <>
-                                    //   {listing.bidplaced === true ?
-                                    //     <Button variant="info" onClick={this.withdrawDeposit(listing.auction_id, listing.type)}>Withdraw Bid</Button>
-                                    //     :
-                                    //     <Button variant="warning" disabled>Auction Ended</Button>
-                                    //   }
-                                    // </>
-                                    // :
                                 }
 															</td>
 													</tr>
