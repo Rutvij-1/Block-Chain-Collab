@@ -1,17 +1,27 @@
 import React, { Component } from 'react'
 import { Table, Button, InputGroup } from 'react-bootstrap';
+import {getPublicKey, getPrivateKey } from "../pub_pvt";
+import EthCrypto from "eth-crypto";
 
 class MyBids extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      currentAccount: '',
+			web3: null,
+      accounts: null,
+      currentAccount: null,
+      market: null,
+      blind_contract: null,
+      vickrey_contract: null,
+      average_contract: null,
       listings: [],
       makebid: false,
       formData: {}
     }
     this.handleChange = this.handleChange.bind(this);
     this.makeBid = this.makeBid.bind(this);
+    this.confirm = this.confirm.bind(this);
+    this.buyItem = this.buyItem.bind(this);
     this.revealBid = this.revealBid.bind(this);
   }
   componentDidMount = async () => {
@@ -21,11 +31,24 @@ class MyBids extends Component {
         blind_contract: this.props.blind_contract,
         average_contract: this.props.average_contract,
         web3: this.props.web3,
-        currentAccount: this.props.account
+        currentAccount: this.props.account,
+				market: this.props.market
       });
       let mylist = [];
       let offSet = 1000;
-      let blindAuctions = await this.props.blind_contract.methods.getallauctions().call({ from: this.props.account });
+      let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
+      for (let i = 0; i < marketListings.length; ++i) {
+        if (marketListings[i]["buyer"] == this.props.account) {
+          marketListings[i]["type"] = "Normal Listing";
+          marketListings[i]["new_auction_id"] = parseInt(marketListings[i]["auction_id"]) + offSet;
+          marketListings[i]["bidding_deadline"] = "NA";
+          marketListings[i]["reveal_deadline"] = "NA";
+          mylist.push(marketListings[i]);
+        }
+      }
+
+      offSet += mylist.length;
+			let blindAuctions = await this.props.blind_contract.methods.getallauctions().call({ from: this.props.account });
       for (let i = 0; i < blindAuctions.length; ++i) {
         if (blindAuctions[i]["bidplaced"]) {
           blindAuctions[i]["type"] = "Blind Auction";
@@ -65,6 +88,34 @@ class MyBids extends Component {
       alert(`Loading...`);
 		}
   };
+
+	buyItem = (auction_id) => async (e) => {
+    e.preventDefault();
+		let pubkey = await getPublicKey(this.state.currentAccount);
+		try{
+			let res = await this.state.market.methods.requestBuy(auction_id,pubkey).send({ from: this.props.account });
+			window.location.reload(false);
+		} catch(error){
+			alert(`error`);
+		}
+	};
+
+	confirm = (auction_id) => async (e) => {
+    e.preventDefault();
+		try{
+			await this.state.market.methods.confirmDelivery(auction_id).send({ from: this.props.account });
+			let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+			//decrypt using the private key offchain
+			let buyer_private_key = await getPrivateKey(this.state.currentAccount);
+			try{
+				let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+			} catch(err){
+				alert(`Wrong key`);
+			}
+		} catch(error){
+			alert(`error`);
+		}
+	};
 
   makeBid = (auction_id, type) => async (e) => {
     e.preventDefault();
@@ -174,10 +225,11 @@ class MyBids extends Component {
           <Table striped bordered hover>
             <thead>
               <tr>
-                <td>Auction ID</td>
-                <td>Auction Type</td>
+                <td>Listing ID</td>
+                <td>Listing Type</td>
                 <td>Item Name</td>
                 <td>Item Description</td>
+                <td>Item Price</td>
                 <td>Bidding Deadline</td>
                 <td>Bid Reveal Deadline</td>
                 <td>Manage</td>
@@ -186,25 +238,45 @@ class MyBids extends Component {
             <tbody>
               {this.state.listings.map(listing => {
                 let status = 'Active'
-                if (Date.now() > listing.bidding_deadline) {
+                if (listing.type != "Normal Listing" && Date.now() > listing.bidding_deadline) {
                   status = 'Bidding Over'
                 }
-                if (Date.now() > listing.reveal_deadline) {
+                if (listing.type != "Normal Listing" && Date.now() > listing.reveal_deadline) {
                   status = 'Reveal Time Over'
                 }
                 if (listing.ended) {
                   status = 'Ended'
                 }
+								if(listing.type === "Normal Listing" && listing.buyer_alloted) {
+									status = 'Requested'
+								}
+								if(listing.type === "Normal Listing" && listing.sold_or_withdrawn) {
+									status = 'Sold'
+								}
                 return (
                   <tr key={listing.new_auction_id}>
                     <td>{listing.new_auction_id}</td>
                     <td>{listing.type}</td>
                     <td>{listing.item_name}</td>
                     <td>{listing.item_description}</td>
-                    <td>{listing.bidding_deadline.toTimeString()}</td>
-                    <td>{listing.reveal_deadline.toTimeString()}</td>
+										<td>{listing.type!="Normal Listing" ? "NA": listing.price}</td>
+                    <td>{listing.type!="Normal Listing" ? listing.bidding_deadline.toTimeString(): listing.bidding_deadline}</td>
+                    <td>{listing.type!="Normal Listing" ? listing.reveal_deadline.toTimeString(): listing.reveal_deadline}</td>
                     <td>
-                      {(status === 'Active') ?
+                      { listing.type === "Normal Listing" ?
+											(status === 'Active') ?
+											<Button variant="primary" onClick={this.buyItem(listing.auction_id, listing.type)}>Buy</Button>
+											:
+											(status === 'Requested') ?
+											<Button variant="info" disabled>Requested to Buy</Button>
+											:
+											(status === 'Sold') ?
+											<Button variant="primary" onClick={this.confirm(listing.auction_id)}>Confirm Checkout</Button>
+											:
+											<Button variant="outline-success" disabled>Delivered</Button>
+											:
+											// Auction Item
+											(status === 'Active') ?
                         <>
                           {listing.bidplaced === true ?
                             <div>
