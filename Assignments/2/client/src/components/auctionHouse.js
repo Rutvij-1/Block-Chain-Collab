@@ -230,7 +230,7 @@ class AuctionHouse extends Component {
                     <td>
                       {listing.beneficiary === this.state.currentAccount ?
                         (status === 'Reveal Time Over') ?
-                          <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="secondary">End Auction</Button>
+                          <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="danger">End Auction</Button>
                           :
                           <Button variant="outline-success" disabled>Active</Button>
                         :

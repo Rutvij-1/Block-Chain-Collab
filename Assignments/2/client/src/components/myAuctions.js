@@ -134,6 +134,10 @@ class MyAuctions extends Component {
                 if (Date.now() > listing.bidding_deadline) {
                   status = 'Bidding Over'
                 }
+                if (Date.now() > listing.reveal_deadline) {
+                  status = 'Reveal Time Over'
+                }
+                console.log(Date.now(), listing.reveal_deadline, Date.now() > listing.reveal_deadline, status);
                 if (listing.ended) {
                   status = 'Ended'
                   sold = "True"
@@ -151,9 +155,12 @@ class MyAuctions extends Component {
                         <p>Auction Ended Successfully. Winning Bid :{listing.finalBid}</p>
                         :
                         (status === 'Active') ?
-                          <Button variant="outline-success" disabled>Active</Button>
+                          <Button variant="outline-success" disabled>Bidding Period</Button>
                           :
-                          <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
+                          (status === "Bidding Over") ?
+                            <Button variant="outline-success" disabled>Reveal Period</Button>
+                            :
+                            <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
                       }
                     </td>
                   </tr>
