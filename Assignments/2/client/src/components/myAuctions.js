@@ -1,17 +1,26 @@
 import React, { Component } from 'react'
 import { Table, Button, InputGroup } from 'react-bootstrap';
+import { get_secret, getPublicKey } from '../pub_pvt';
 
 class MyAuctions extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      currentAccount: '',
+			web3: null,
+      accounts: null,
+      currentAccount: null,
+      market: null,
+      blind_contract: null,
+      vickrey_contract: null,
+      average_contract: null,
       listings: [],
       makebid: false,
       formData: {}
     }
     this.handleChange = this.handleChange.bind(this);
     this.endAuction = this.endAuction.bind(this);
+    this.sellItem = this.sellItem.bind(this);
+		
   }
   componentDidMount = async () => {
     try {
@@ -20,10 +29,24 @@ class MyAuctions extends Component {
         blind_contract: this.props.blind_contract,
         average_contract: this.props.average_contract,
         web3: this.props.web3,
-        currentAccount: this.props.account
+        currentAccount: this.props.account,
+				market: this.props.market
       });
       let mylist = []
       let offSet = 1000;
+
+			let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
+      for (let i = 0; i < marketListings.length; ++i) {
+        if (marketListings[i]["beneficiary"] == this.props.account) {
+          marketListings[i]["type"] = "Normal Listing";
+          marketListings[i]["new_auction_id"] = parseInt(marketListings[i]["auction_id"]) + offSet;
+          marketListings[i]["bidding_deadline"] = "NA";
+          marketListings[i]["reveal_deadline"] = "NA";
+          mylist.push(marketListings[i]);
+        }
+      }
+
+      offSet += mylist.length;
       let blindAuctions = await this.props.blind_contract.methods.getallauctions().call({ from: this.props.account });
       for (let i = 0; i < blindAuctions.length; ++i) {
         if (blindAuctions[i]["beneficiary"] == this.props.account) {
@@ -61,16 +84,32 @@ class MyAuctions extends Component {
       this.setState({ listings: mylist });
 
     } catch (error) {
-      alert(`Loading...`);
+      alert(`Loading error...`);
 		}
   };
-
+	sellItem = (auction_id) => async (e) => {
+		let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
+		let pubkey = await getPublicKey(marketListings[auction_id].buyer);
+		let secr = await get_secret(pubkey, this.state.formData.unique_string);
+		let res = await this.state.market.methods.sellIstem(auction_id,secr).send({from: this.state.currentAccount});
+		let sent_string = await res.logs[0].args.H;
+		this.props.set_string(sent_string);
+		console.log(sent_string);
+	};
 
   endAuction = (auction_id, type) => async (e) => {
     e.preventDefault();
-    const { blind_contract, vickrey_contract, average_contract } = this.state;
+    const { market, blind_contract, vickrey_contract, average_contract } = this.state;
     try {
-      if (type === "Blind Auction") {
+			if (type === "Normal Listing") {
+        await market.methods.sellIstem(
+          parseInt(auction_id),
+					this.state.unique_string
+        ).send({
+          from: this.state.currentAccount
+        });
+      }
+      else if (type === "Blind Auction") {
         await blind_contract.methods.auctionEnd(
           parseInt(auction_id)
         ).send({
@@ -115,10 +154,11 @@ class MyAuctions extends Component {
           <Table striped bordered hover>
             <thead>
               <tr>
-                <td>Auction ID</td>
-                <td>Auction Type</td>
+                <td>Listing ID</td>
+                <td>Listing Type</td>
                 <td>Item Name</td>
                 <td>Item Description</td>
+                <td>Item Price</td>
                 <td>Bidding Deadline</td>
                 <td>Bid Reveal Deadline</td>
                 <td>Manage</td>
@@ -127,14 +167,10 @@ class MyAuctions extends Component {
             <tbody>
               {this.state.listings.map(listing => {
                 let status = 'Active'
-                if (Date.now() > listing.reveal_deadline) {
+                if (listing.type != "Normal Listing" && Date.now() > listing.reveal_deadline) {
                   status = 'Reveal Over'
                 }
-                if (Date.now() > listing.reveal_deadline) {
-                  status = 'Reveal Time Over'
-                }
-                console.log(Date.now(), listing.reveal_deadline, Date.now() > listing.reveal_deadline, status);
-                if (listing.ended) {
+                if (listing.type != "Normal Listing" &&  listing.ended) {
                   status = 'Ended'
                 }
                 return (
@@ -143,20 +179,27 @@ class MyAuctions extends Component {
                     <td>{listing.type}</td>
                     <td>{listing.item_name}</td>
                     <td>{listing.item_description}</td>
-                    <td>{listing.bidding_deadline.toTimeString()}</td>
-                    <td>{listing.reveal_deadline.toTimeString()}</td>
+                    <td>{listing.type!="Normal Listing" ? "NA": listing.price}</td>
+                    <td>{listing.type!="Normal Listing" ? listing.bidding_deadline.toTimeString(): listing.bidding_deadline}</td>
+                    <td>{listing.type!="Normal Listing" ? listing.reveal_deadline.toTimeString(): listing.reveal_deadline}</td>
                     <td>
-                      {listing.ended ?
-                        <p>Auction Ended Successfully. <br/> Winner: {listing.highestBidder? listing.highestBidder: "None"} <br/> Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</p>
-                        :
-                        (status === 'Active') ?
-                          <Button variant="outline-success" disabled>Bidding Period</Button>
-                          :
-                          (status === "Bidding Over") ?
-                            <Button variant="outline-success" disabled>Reveal Period</Button>
-                            :
-                            <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
-                      }
+											{ listing.type === "Normal Listing" ?
+												(status === 'Ended')?
+													<p>Auction Ended Successfully. <br/> Buyer: {listing.buyer? listing.buyer: "None"} <br/> Selling Price: {listing.price}</p>
+													:
+													<>
+													<input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
+													<Button variant="success" onClick={this.sellItem(listing.auction_id)}>Sell Item</Button>
+													</>
+												:
+												(status === 'Ended')?
+													<p>Auction Ended Successfully. <br/> Winner: {listing.highestBidder? listing.highestBidder: "None"} <br/> Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</p>
+													:
+													(status === 'Active') ?
+														<Button variant="outline-success" disabled>Active</Button>
+														:
+														<Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
+												}
                     </td>
                   </tr>
                 )

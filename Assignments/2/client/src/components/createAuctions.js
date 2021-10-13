@@ -30,6 +30,7 @@ class CreateAuctions extends Component {
             <label className="form-label">Auction Type</label>
             <select className="form-select" id="auctionType" placeholder="Select Auction Type" required onChange={this.props.handleChange}>
               <option value="Select Type" disabled="disabled" selected>Select Type</option>
+              <option value="Normal Listing">Normal Listing</option>
               <option value="Blind Auction">Blind Auction</option>
               <option value="Vickrey Auction">Vickrey Auction</option>
               <option value="Average Price Auction">Average Price Auction</option>
