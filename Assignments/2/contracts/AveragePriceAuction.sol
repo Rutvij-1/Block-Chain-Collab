@@ -483,8 +483,9 @@ contract AveragePriceAuction {
         if (Auctions[auction_id].no_of_bids == 0) {
             emit ItemUnsold(auction_id);
             Auctions[auction_id].ended = true;
+            activeauctions -= 1;
         } else {
-            uint256 closest_difference = 100000000000000000000000;
+            int256 closest_difference = 100000000000000000000000;
             address payable winner = address(0);
             uint256 winning_bid = 0;
             for (uint256 i = 0; i < Auctions[auction_id].no_of_bids; i++) {
@@ -494,8 +495,9 @@ contract AveragePriceAuction {
                 uint256 bid_value = Auctions[auction_id].pendingReturns[
                     bidder_address
                 ];
-                uint256 difference = Auctions[auction_id].sum -
-                    (bid_value * Auctions[auction_id].no_of_bids);
+                int256 difference = int256(Auctions[auction_id].sum) -
+                    (int256(bid_value) *
+                        int256(Auctions[auction_id].no_of_bids));
                 // if (difference < 0) {
                 //     difference = -difference;
                 // }

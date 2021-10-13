@@ -532,6 +532,7 @@ contract BlindAuction {
             emit ItemUnsold(auction_id);
             emit AuctionEnded(auction_id, address(0), 0);
             Auctions[auction_id].ended = true;
+            activeauctions -= 1;
         } else {
             emit AuctionEnded(
                 auction_id,

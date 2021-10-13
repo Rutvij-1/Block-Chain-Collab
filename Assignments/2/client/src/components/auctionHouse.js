@@ -47,7 +47,7 @@ class AuctionHouse extends Component {
       offSet += marketListings.length;
       let blindAuctions = await this.props.blind_contract.methods.getactiveauctions().call({ from: this.props.account });
       for (let i = 0; i < blindAuctions.length; ++i) {
-				console.log(blindAuctions[i]["ended"]);
+        console.log(blindAuctions[i]["ended"]);
         blindAuctions[i]["type"] = "Blind Auction";
         blindAuctions[i]["new_auction_id"] = parseInt(blindAuctions[i]["auction_id"]) + offSet;
         blindAuctions[i]["bidding_deadline"] = new Date(blindAuctions[i]["biddingEnd"] * 1000);
@@ -76,7 +76,7 @@ class AuctionHouse extends Component {
 
     } catch (error) {
       alert(`Loading...`);
-		}
+    }
   };
 
 	sellItem = (auction_id) => async (e) => {
@@ -172,9 +172,9 @@ class AuctionHouse extends Component {
           value: deposit
         });
       }
-			window.location.reload(false);
+      window.location.reload(false);
     } catch (error) {
-			alert(`Error: ${error.message}`);
+      alert(`Error: ${error.message}`);
     }
   }
 
@@ -203,9 +203,9 @@ class AuctionHouse extends Component {
           from: this.state.currentAccount
         });
       }
-			window.location.reload(false);
+      window.location.reload(false);
     } catch (error) {
-			alert(`Error: ${error.message}`);
+      alert(`Error: ${error.message}`);
     }
   };
 
@@ -241,9 +241,9 @@ class AuctionHouse extends Component {
           from: currentAccount
         });
       }
-			window.location.reload(false);
+      window.location.reload(false);
     } catch (error) {
-			alert(`Error: ${error.message}`);
+      alert(`Error: ${error.message}`);
     }
   };
 
@@ -311,7 +311,7 @@ class AuctionHouse extends Component {
 													</>
 												:
                         (status === 'Reveal Time Over') ?
-                          <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="secondary">End Auction</Button>
+                          <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="danger">End Auction</Button>
                           :
                           <Button variant="outline-success" disabled>Active</Button>
                         :
@@ -347,25 +347,25 @@ class AuctionHouse extends Component {
                           :
                           (status === 'Bidding Over') ?
                             <>
-														
+
                               {listing.bidplaced === true ?
-																listing.revealed?
-																<Button variant="info" disabled>Revealed</Button>
-																:
-																<>
-																	<InputGroup>
-																		<input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
-																		<input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-																	</InputGroup>
-																	<Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
-																</>
+                                listing.revealed ?
+                                  <Button variant="info" disabled>Revealed</Button>
+                                  :
+                                  <>
+                                    <InputGroup>
+                                      <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
+                                      <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
+                                    </InputGroup>
+                                    <Button variant="info" onClick={this.revealBid(listing.auction_id, listing.type)}>Reveal Bid</Button>
+                                  </>
                                 :
                                 <Button variant="danger" disabled>Bidding Time Over</Button>
                               }
                             </>
                             :
                             (status === 'Reveal Time Over') ?
-                              <Button variant="danger" disabled>Reveal Time Over. <br/>Wait for auction end.</Button>
+                              <Button variant="danger" disabled>Reveal Time Over. <br />Wait for auction end.</Button>
                               :
                               <> Wait for Auction End </>
                       }

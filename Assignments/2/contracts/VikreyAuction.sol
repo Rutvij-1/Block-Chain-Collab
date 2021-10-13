@@ -563,6 +563,7 @@ contract VikreyAuction {
             emit ItemUnsold(auction_id);
             emit AuctionEnded(auction_id, address(0), 0);
             Auctions[auction_id].ended = true;
+            activeauctions -= 1;
         } else if (
             // Auctions[auction_id].secondHighestBidder == address(0) &&
             Auctions[auction_id].secondHighestBid == 0
@@ -575,6 +576,7 @@ contract VikreyAuction {
 
             Auctions[auction_id].ended = true;
             Auctions[auction_id].sold = true;
+            activeauctions -= 1;
             Auctions[auction_id].beneficiary.transfer(
                 Auctions[auction_id].highestBid
             );
