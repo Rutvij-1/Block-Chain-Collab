@@ -34,6 +34,7 @@ contract AveragePriceAuction {
     /// @param winner address of the winner of the auction
     /// @param winningBid Bid the winner placed
     /// @param bidders addresses of the bidders
+    /// @param pubkey stores the pubkeys of the bidders sent over with the bids
     struct auctions {
         uint256 auction_id;
         address payable beneficiary;
@@ -53,6 +54,7 @@ contract AveragePriceAuction {
         // Allowed withdrawals of previous bids
         mapping(address => uint256) pendingReturns;
         mapping(address => bool) bidded;
+        mapping(address => string) pubkey;
     }
 
     /// @dev structure for each display active Auction Listings
@@ -161,7 +163,9 @@ contract AveragePriceAuction {
     ///@dev announce winner
     /// @param Auction_id is the id of the auction
     /// @param winner is the address of the winner
-    event WinnerChosen(uint256 Auction_id, address winner);
+    ///@param pubkey is the public key of the winner
+    ///@param winning_bid is the value of the winning bid
+    event WinnerChosen(uint256 Auction_id, address winner,string pubkey,uint256 winning_bid);
 
     ///@dev bid revealed
     ///@param Auction_id is the id of the auction
@@ -195,6 +199,16 @@ contract AveragePriceAuction {
     ///@param bidder is the bidder
     ///@param bid_value refers to the bid
     event NewHighestBid(uint256 auction_id, address bidder, uint256 bid_value);
+
+    ///@dev event to send the hashed Item 
+    ///@param auction_id is the id of the auction 
+    ///@param H is the hashed passwords 
+    event encryptedKey(uint256 auction_id, string H);
+
+    ///@dev to confirm delivery
+    ///@param auction_id is the id of the auction 
+    event deliveryComplete(uint256 auction_id);
+
 
     /// @dev create a lists of all auctions
     mapping(uint256 => auctions) private Auctions;
@@ -262,6 +276,18 @@ contract AveragePriceAuction {
         );
         _;
     }
+    modifier validAuctionId(uint256 auction_id){
+        require(auction_id < current_auction_id,"Auction Id provided doesn't exist");
+        _;
+    }
+    modifier onlyWinner(uint256 auction_id) {
+        require(msg.sender == Auctions[auction_id].winner, "Only Winner can confirm purchase");
+        _;
+
+
+        
+    }
+    
 
     //functions
 
@@ -317,6 +343,7 @@ contract AveragePriceAuction {
     function getactiveauctions()
         external
         view
+        
         returns (auction_active_listings[] memory)
     {
         uint256 currentIndex = 0;
@@ -375,15 +402,18 @@ contract AveragePriceAuction {
     // function that can be used to bid in an auction
     /// @param blindedBid is the hashed version of bid
     /// @param auction_id is the id of the auction
-    function bid(bytes32 blindedBid, uint256 auction_id)
+    ///@param pubkey is the public key of the bidder
+    function bid(bytes32 blindedBid, uint256 auction_id,string calldata pubkey)
         external
         payable
+        validAuctionId(auction_id)
         onlyBefore(Auctions[auction_id].biddingEnd)
         validBidder(auction_id)
         newBidder(auction_id)
     {
         Auctions[auction_id].bids[msg.sender] = Bid(blindedBid, msg.value);
         Auctions[auction_id].bidded[msg.sender] = true;
+        Auctions[auction_id].pubkey[msg.sender] = pubkey;
         emit BidMade(msg.sender);
     }
 
@@ -401,6 +431,7 @@ contract AveragePriceAuction {
     )
         external
         payable
+        validAuctionId(auction_id)
         onlyAfter(Auctions[auction_id].biddingEnd)
         onlyBefore(Auctions[auction_id].revealEnd)
         alreadyBidder(auction_id)
@@ -418,8 +449,8 @@ contract AveragePriceAuction {
         } else {
             Auctions[auction_id].revealedBidders.push(msg.sender);
             refund += bidToCheck.deposit;
-            if (bidToCheck.deposit >= value) {
-                if (placeBid(auction_id, msg.sender, value)) refund -= value;
+            if (bidToCheck.deposit >= 2*value) {
+                if (placeBid(auction_id, msg.sender, value)) refund -= 2*value;
                 emit BidRevealed(auction_id, msg.sender);
             } else emit DepositNotEnough(auction_id, msg.sender);
         }
@@ -446,7 +477,7 @@ contract AveragePriceAuction {
         Auctions[auction_id].bidders[Auctions[auction_id].no_of_bids] = bidder;
         Auctions[auction_id].no_of_bids += 1;
         Auctions[auction_id].sum += value;
-        Auctions[auction_id].pendingReturns[bidder] += value;
+        Auctions[auction_id].pendingReturns[bidder] += 2*value;
         return true;
     }
 
@@ -476,6 +507,8 @@ contract AveragePriceAuction {
     ///@notice only beneficiary of the auction can call the function
     function auctionEnd(uint256 auction_id)
         external
+        validAuctionId(auction_id)
+
         onlyAfter(Auctions[auction_id].revealEnd)
         onlyBeneficiary(auction_id)
         auctionActive(auction_id)
@@ -483,8 +516,9 @@ contract AveragePriceAuction {
         if (Auctions[auction_id].no_of_bids == 0) {
             emit ItemUnsold(auction_id);
             Auctions[auction_id].ended = true;
+            activeauctions -= 1;
         } else {
-            uint256 closest_difference = 100000000000000000000000;
+            int256 closest_difference = 100000000000000000000000;
             address payable winner = address(0);
             uint256 winning_bid = 0;
             for (uint256 i = 0; i < Auctions[auction_id].no_of_bids; i++) {
@@ -494,8 +528,9 @@ contract AveragePriceAuction {
                 uint256 bid_value = Auctions[auction_id].pendingReturns[
                     bidder_address
                 ];
-                uint256 difference = Auctions[auction_id].sum -
-                    (bid_value * Auctions[auction_id].no_of_bids);
+                int256 difference = int256(Auctions[auction_id].sum) -
+                    (int256(bid_value) *
+                        int256(Auctions[auction_id].no_of_bids));
                 // if (difference < 0) {
                 //     difference = -difference;
                 // }
@@ -517,10 +552,63 @@ contract AveragePriceAuction {
                 i < Auctions[auction_id].revealedBidders.length;
                 ++i
             ) {
-                withdraw(auction_id, Auctions[auction_id].revealedBidders[i]);
+                if(Auctions[auction_id].revealedBidders[i] != Auctions[auction_id].winner)
+                    withdraw(auction_id, Auctions[auction_id].revealedBidders[i]);
             }
-            Auctions[auction_id].beneficiary.transfer(winning_bid);
-            emit WinnerChosen(auction_id, winner);
+            //Auctions[auction_id].beneficiary.transfer(winning_bid);
+            string storage winner_pubkey = Auctions[auction_id].pubkey[winner];
+            winning_bid = Auctions[auction_id].winningBid;
+            emit WinnerChosen(auction_id, winner,winner_pubkey,winning_bid);
         }
     }
+
+    /// @dev Sale of item from seller's side
+    /// @dev Transaction from the seller
+    /// @param auction_id is the id of the item being sold_
+    /// @dev H is the unique string for the item
+    /// @dev assume the seller is fair,will provide the right item
+    function sellItem(uint256 auction_id, string calldata H)
+        external
+        payable
+        validAuctionId(auction_id)
+    
+        auctionEnded(auction_id)
+        onlyBeneficiary(auction_id)
+        
+    {
+        require(
+            msg.value == 2 * Auctions[auction_id].winningBid,
+            "You have not paid the security deposit"
+        );
+
+        emit encryptedKey(auction_id, H);
+      //  Auctions[auction_id].beneficiary.transfer(Auctions[auction_id].winningBid);
+    }
+
+    
+    function confirmDelivery(uint256 auction_id)
+        external
+        payable
+        validAuctionId(auction_id)
+        onlyWinner(auction_id)
+        auctionEnded(auction_id)
+    {
+        /// Refund the seller
+        uint256 amt = Auctions[auction_id].winningBid ;
+        uint256 prof = 3*amt ;
+       // emit deliveryComplete(auction_id);
+        Auctions[auction_id].pendingReturns[Auctions[auction_id].winner] = 0;
+        address payable winner = Auctions[auction_id].winner;
+        //winner.transfer(amt);
+
+        //Auctions[auction_id].winner.transfer(amt);
+        //withdraw(auction_id, Auctions[auction_id].winner);
+
+        Auctions[auction_id].beneficiary.transfer(prof);
+        winner.transfer(amt);
+
+        emit deliveryComplete(auction_id);
+    }
+
+    
 }

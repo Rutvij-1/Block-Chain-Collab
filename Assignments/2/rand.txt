@@ -1,0 +1,185 @@
+
+await A.auctionItem("Netflix Password","1 screen ",90,120,{from : a[1] })
+
+await A.auctionItem("Prime Password","1 screen ",180,120,{from : a[2] })
+
+data = await A.getactiveauctions()
+data
+
+bid1 = await web3.eth.abi.encodeParameters(["uint256","string"],[200,"1"])
+bid2 = await web3.eth.abi.encodeParameters(["uint256","string"],[250,"2"])
+bid3 = await web3.eth.abi.encodeParameters(["uint256","string"],[300,"3"])
+
+z = await A.bid(bid1,0,{from : a[3],value :250})
+z1 = await A.bid(bid2,0,{from : a[4],value : 300})
+z2 = await A.bid(bid3,1,{from : a[5],value : 130})
+z4 = await A.bid(bid3,0,{from : a[6],value :150})
+
+r1 = await A.reveal(200,false,"ac3au1",0,{from : a[3]})
+r2 = await A.reveal(250,false,"ac4au1",0,{from : a[4]})
+r3 = await A.reveal(200,false,"ac3au2",1,{from : a[3]})
+r4 = await A.reveal(150,false,"ac5au2",1,{from : a[5]})
+
+
+
+///
+
+
+owner = await web3.eth.getBalance(a[1])
+await A.auctionItem("Net","pass",90,90,{from : a[1]})
+
+data = await A.getactiveauctions()
+
+bid2 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[2500000000000000,"2"]))
+bid3 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[3000000000000000,"3"]))
+bid1 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[2000000000000000,"1"]))
+
+b2 = await web3.eth.getBalance(a[2])
+b3 = await web3.eth.getBalance(a[3])
+b4 = await web3.eth.getBalance(a[4])
+
+
+n1 = await A.bid(bid1,0,{from : a[2],value : 2000000000000000})
+n2 = await A.bid(bid2,0,{from : a[3],value : 3000000000000000})
+n3 = await A.bid(bid3,0,{from : a[4],value : 2500000000000000})
+
+c2 = await web3.eth.getBalance(a[2])
+c3 = await web3.eth.getBalance(a[3])
+c4 = await web3.eth.getBalance(a[4])
+
+w1 = await A.reveal(2000000000000000,"1",0,{from : a[2]})
+w2 = await A.reveal(2500000000000000,"2",0,{from : a[3]})
+w3 = await A.reveal(3000000000000000,"3",0,{from : a[4]})
+//w4 = await A.reveal(100,false,"4",0,{from : a[2]})
+
+q1 = A.auctionEnd(0,{from : a[1]})
+
+
+g2 = await web3.eth.getBalance(a[2])
+g3 = await web3.eth.getBalance(a[3])
+g4 = await web3.eth.getBalance(a[4])
+
+y1 = await A.withdraw(0,{from : a[2]})
+y2 = await A.withdraw(0,{from : a[3]})
+y3 = await A.withdraw(0,{from : a[4]})
+
+f2 = await web3.eth.getBalance(a[2])
+f3 = await web3.eth.getBalance(a[3])
+f4 = await web3.eth.getBalance(a[4])
+o2 = await web3.eth.getBalance(a[1])
+
+o2 = await web3.eth.getBalance(a[1])
+
+
+
+
+
+
+//
+a = await web3.eth.getAccounts()
+migrate reset
+A = await VikreyAuction.deployed()
+A.addresses 
+
+bid1 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[1000000000000000,"1"]))
+bid2 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[2000000000000000,"2"]))
+bid3 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[3100000000000000,"3"]))
+bid4 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[4000000000000000,"4"]))
+
+
+owner = await web3.eth.getBalance(a[1])
+x = 100000000000000
+owner = owner / x
+
+b2 = await web3.eth.getBalance(a[2])
+b3 = await web3.eth.getBalance(a[3])
+b4 = await web3.eth.getBalance(a[4])
+b5 = await web3.eth.getBalance(a[5])
+
+b2 = b2/x
+b3 = b3/x
+b4 = b4/x
+b5 = b5/x
+
+Z = await A.auctionItem("Net","pass",90,90,{from : a[1]})
+data = await A.getactiveauctions()
+
+n1 = await A.bid(bid1,0,{from : a[2],value : 1000000000000000})
+n2 = await A.bid(bid2,0,{from : a[3],value : 2000000000000000})
+n3 = await A.bid(bid3,0,{from : a[4],value : 3100000000000000})
+n4 = await A.bid(bid4,0,{from : a[5],value : 4000000000000000})
+
+c2 = await web3.eth.getBalance(a[2])
+c3 = await web3.eth.getBalance(a[3])
+c4 = await web3.eth.getBalance(a[4])
+c5 = await web3.eth.getBalance(a[5])
+
+c2 = c2/x
+c3 = c3/x
+c4 = c4/x
+c5 = c5/x
+
+w1 = await A.reveal(1000000000000000,"1",0,{from : a[2]})
+w2 = await A.reveal(2000000000000000,"2",0,{from : a[3]})
+w3 = await A.reveal(3100000000000000,"3",0,{from : a[4]})
+w4 = await A.reveal(4000000000000000,"4",0,{from : a[5]})
+
+q = await A.auctionEnd(0,{from : a[1]})
+
+d2 = await web3.eth.getBalance(a[2])
+d3 = await web3.eth.getBalance(a[3])
+d4 = await web3.eth.getBalance(a[4])
+d5 = await web3.eth.getBalance(a[5])
+
+d2 = d2/x
+d3 = d3/x
+d4 = d4/x
+d5 = d5/x
+
+
+
+
+e2 = await web3.eth.getBalance(a[2])
+e3 = await web3.eth.getBalance(a[3])
+e4 = await web3.eth.getBalance(a[4])
+e5 = await web3.eth.getBalance(a[5])
+
+e2 = e2/x
+e3 = e3/x
+e4 = e4/x
+e5 = e5/x
+
+
+o2 = await web3.eth.getBalance(a[1])
+o2 = o2/x
+
+
+
+
+
+
+
+
+
+compile
+migrate
+kk = 10000000000000
+ a = await web3.eth.getAccounts()
+ A = await AveragePriceAuction.deployed()
+z = A.auctionItem("netflix","baap ki company",30,30, {from: a[0]})
+x1 = await A.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[1000000000000000,"first"])),0,{from:a[1],value:1100000000000000})
+x2 = await A.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[500000000000000,"second"])),0,{from:a[2],value:1500000000000000})
+x3 = await A.bid(web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[1200000000000000,"third"])),0,{from:a[3],value:1300000000000000})
+y1 = await A.reveal(1000000000000000,"first",0,{from:a[1]})
+y2 = await A.reveal(500000000000000,"second",0,{from:a[2]})
+y3 = await A.reveal(1200000000000000,"third",0,{from:a[3]})
+web3.eth.getBalance(a[0])
+q2 = await web3.eth.getBalance(a[1])
+q3 = await web3.eth.getBalance(a[2])
+q4 = await web3.eth.getBalance(a[3])
+y = await A.auctionEnd(0,{from:a[0]})
+web3.eth.getBalance(a[0])
+web3.eth.getBalance(a[1])
+web3.eth.getBalance(a[2])
+web3.eth.getBalance(a[3])
+y.logs

@@ -1,0 +1,112 @@
+migrate
+a = await web3.eth.getAccounts()
+A = await AveragePriceAuction.deployed()
+
+const EthCrypto = require('eth-crypto');
+
+b2 = await EthCrypto.createIdentity();
+b2_p1 = b2.publicKey
+b2_p2 = b2.privateKey
+
+b3 = await EthCrypto.createIdentity();
+b3_p1 = b3.publicKey
+b3_p2 = b3.privateKey
+
+b4 = await EthCrypto.createIdentity();
+b4_p1 = b4.publicKey
+b4_p2 = b4.privateKey
+
+b5 = await EthCrypto.createIdentity();
+b5_p1 = b5.publicKey;
+b5_p2 = b5.privateKey
+
+
+bid2 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[1000000000000000,"1"]))
+bid3 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[2000000000000000,"2"]))
+bid4 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[3100000000000000,"3"]))
+bid5 = await web3.utils.keccak256(web3.eth.abi.encodeParameters(["uint256","string"],[4000000000000000,"4"]))
+
+owner = await web3.eth.getBalance(a[1])
+x = 100000000000000
+owner = owner / x
+
+c2 = await web3.eth.getBalance(a[2])
+c3 = await web3.eth.getBalance(a[3])
+c4 = await web3.eth.getBalance(a[4])
+c5 = await web3.eth.getBalance(a[5])
+
+c2 = c2/x
+c3 = c3/x
+c4 = c4/x
+c5 = c5/x
+
+
+Z = await A.auctionItem("Net","pass",10,10,{from : a[1]})
+data = await A.getactiveauctions()
+
+n1 = await A.bid(bid2,0,b2_p1,{from : a[2],value : 2000000000000000})
+n2 = await A.bid(bid3,0,b3_p1,{from : a[3],value : 4000000000000000})
+n3 = await A.bid(bid4,0,b4_p1,{from : a[4],value : 6200000000000000})
+n4 = await A.bid(bid5,0,b4_p1,{from : a[5],value : 8000000000000000})
+
+d2 = await web3.eth.getBalance(a[2])
+d3 = await web3.eth.getBalance(a[3])
+d4 = await web3.eth.getBalance(a[4])
+d5 = await web3.eth.getBalance(a[5])
+
+d2 = d2/x
+d3 = d3/x
+d4 = d4/x
+d5 = d5/x
+
+w1 = await A.reveal(1000000000000000,"1",0,{from : a[2]})
+w2 = await A.reveal(2000000000000000,"2",0,{from : a[3]})
+w3 = await A.reveal(3100000000000000,"3",0,{from : a[4]})
+w4 = await A.reveal(4000000000000000,"4",0,{from : a[5]})
+
+q = await A.auctionEnd(0,{from : a[1]})
+
+e2 = await web3.eth.getBalance(a[2])
+e3 = await web3.eth.getBalance(a[3])
+e4 = await web3.eth.getBalance(a[4])
+e5 = await web3.eth.getBalance(a[5])
+
+e2 = e2/x
+e3 = e3/x
+e4 = e4/x
+e5 = e5/x
+
+password = "Netflix"
+
+const encrypted_message = await EthCrypto.encryptWithPublicKey(b2_p1, password)
+		//convert the cypher text to string off chain
+secret_cipher_string = await EthCrypto.cipher.stringify(encrypted_message);
+
+res = await A.sellItem(0, secret_cipher_string, { from: a[1], value: 4000000000000000 });
+sent_string = await res.logs[0].args.H;
+
+o2 = await web3.eth.getBalance(a[1])
+o2 = o2 / x
+
+cipher = EthCrypto.cipher.parse(sent_string);
+		//decrypt using the private key offchain
+sent_item = await EthCrypto.decryptWithPrivateKey(b2_p2,cipher);
+sent_item
+A.confirmDelivery(0,{from : a[2]})
+f1 = await web3.eth.getBalance(a[1])
+f2 = await web3.eth.getBalance(a[2])
+f3 = await web3.eth.getBalance(a[3])
+f4 = await web3.eth.getBalance(a[4])
+f5 = await web3.eth.getBalance(a[5])
+
+f1 = f1/x
+f2 = f2/x
+f3 = f3/x
+f4 = f4/x
+f5 = f5/x
+
+
+
+
+
+
