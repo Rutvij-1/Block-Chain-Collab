@@ -47,7 +47,6 @@ class AuctionHouse extends Component {
       offSet += marketListings.length;
       let blindAuctions = await this.props.blind_contract.methods.getactiveauctions().call({ from: this.props.account });
       for (let i = 0; i < blindAuctions.length; ++i) {
-        console.log(blindAuctions[i]["ended"]);
         blindAuctions[i]["type"] = "Blind Auction";
         blindAuctions[i]["new_auction_id"] = parseInt(blindAuctions[i]["auction_id"]) + offSet;
         blindAuctions[i]["bidding_deadline"] = new Date(blindAuctions[i]["biddingEnd"] * 1000);
@@ -61,7 +60,6 @@ class AuctionHouse extends Component {
         vikreyAuctions[i]["bidding_deadline"] = new Date(vikreyAuctions[i]["biddingEnd"] * 1000);
         vikreyAuctions[i]["reveal_deadline"] = new Date(vikreyAuctions[i]["revealEnd"] * 1000);
       }
-      // let auctions = blindAuctions.concat(vikreyAuctions);
       offSet += vikreyAuctions.length;
       let averageAuctions = await this.props.average_contract.methods.getactiveauctions().call({ from: this.props.account });
       for (let i = 0; i < averageAuctions.length; ++i) {
@@ -75,7 +73,7 @@ class AuctionHouse extends Component {
       this.setState({ listings: auctions });
 
     } catch (error) {
-      alert(`Loading...`);
+      alert(`Not loading error...`);
     }
   };
 
@@ -172,19 +170,24 @@ class AuctionHouse extends Component {
           value: deposit
         });
       }
-      window.location.reload(false);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error}`);
     }
   }
 
   endAuction = (auction_id, type) => async (e) => {
     e.preventDefault();
-    const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-		const { blind_contract, vickrey_contract, average_contract } = this.state;
+    const { market, blind_contract, vickrey_contract, average_contract } = this.state;
     try {
-      if (type === "Blind Auction") {
+			if (type === "Normal Listing") {
+        await market.methods.sellItem(
+          parseInt(auction_id),
+					this.state.formData.unique_string
+        ).send({
+          from: this.state.currentAccount
+        });
+      }
+      else if (type === "Blind Auction") {
         await blind_contract.methods.auctionEnd(
           parseInt(auction_id)
         ).send({
@@ -203,9 +206,8 @@ class AuctionHouse extends Component {
           from: this.state.currentAccount
         });
       }
-      window.location.reload(false);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+			alert(`Error: ${error}`);
     }
   };
 

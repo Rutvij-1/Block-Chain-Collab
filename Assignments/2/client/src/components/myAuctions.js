@@ -87,6 +87,14 @@ class MyAuctions extends Component {
       alert(`Loading error...`);
 		}
   };
+
+  handleChange(e) {
+    e.preventDefault();
+    const formData = Object.assign({}, this.state.formData);
+    formData[e.target.id] = e.target.value;
+    this.setState({ formData: formData });
+  };
+
 	sellItem = (auction_id) => async (e) => {
 		let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
 		let pubkey = await getPublicKey(marketListings[auction_id].buyer);
@@ -102,9 +110,9 @@ class MyAuctions extends Component {
     const { market, blind_contract, vickrey_contract, average_contract } = this.state;
     try {
 			if (type === "Normal Listing") {
-        await market.methods.sellIstem(
+        await market.methods.sellItem(
           parseInt(auction_id),
-					this.state.unique_string
+					this.state.formData.unique_string
         ).send({
           from: this.state.currentAccount
         });
@@ -128,17 +136,9 @@ class MyAuctions extends Component {
           from: this.state.currentAccount
         });
       }
-			window.location.reload(false);
     } catch (error) {
 			alert(`Error: ${error.message}`);
     }
-  };
-
-  handleChange(e) {
-    e.preventDefault();
-    const formData = Object.assign({}, this.state.formData);
-    formData[e.target.id] = e.target.value;
-    this.setState({ formData: formData });
   };
 
   render() {
