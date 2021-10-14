@@ -54,6 +54,7 @@ contract AveragePriceAuction {
         // Allowed withdrawals of previous bids
         mapping(address => uint256) pendingReturns;
         mapping(address => bool) bidded;
+        mapping(address => bool) revealed;
         mapping(address => string) pubkey;
     }
 
@@ -66,6 +67,7 @@ contract AveragePriceAuction {
     /// @param item_name shows name of the item
     /// @param item_description description of the item
     /// @param bidplaced bool to tell whether the person calling the function bidded or not
+    /// @param revealed bool to tell whether the person calling the revealed their bid or not
     struct auction_active_listings {
         uint256 auction_id;
         address payable beneficiary;
@@ -75,6 +77,7 @@ contract AveragePriceAuction {
         string item_name;
         string item_description;
         bool bidplaced;
+        bool revealed;
     }
 
     /// @dev structure for each display Auction Listings
@@ -87,6 +90,7 @@ contract AveragePriceAuction {
     /// @param item_name shows name of the item
     /// @param item_description description of the item
     /// @param bidplaced bool to tell whether the person calling the function bidded or not
+    /// @param revealed bool to tell whether the person calling the revealed their bid or not
     /// @param finalBid the final price at which the item was sold
     struct auction_all_listings {
         uint256 auction_id;
@@ -98,6 +102,7 @@ contract AveragePriceAuction {
         string item_name;
         string item_description;
         bool bidplaced;
+        bool revealed;
         uint256 finalBid;
     }
 
@@ -367,7 +372,8 @@ contract AveragePriceAuction {
                     currentauction.ended,
                     currentauction.item_name,
                     currentauction.item_description,
-                    currentauction.bidded[msg.sender]
+                    currentauction.bidded[msg.sender],
+                    currentauction.revealed[msg.sender]
                 );
                 currentIndex += 1;
             }
@@ -398,6 +404,7 @@ contract AveragePriceAuction {
                 currentauction.item_name,
                 currentauction.item_description,
                 currentauction.bidded[msg.sender],
+                currentauction.revealed[msg.sender],
                 currentauction.winningBid
             );
         }
@@ -457,6 +464,7 @@ contract AveragePriceAuction {
             emit BidRevealFailed(auction_id, msg.sender);
         } else {
             Auctions[auction_id].revealedBidders.push(msg.sender);
+            Auctions[auction_id].revealed[msg.sender] = true;
             refund += bidToCheck.deposit;
             if (bidToCheck.deposit >= 2 * value) {
                 if (placeBid(auction_id, msg.sender, value))
