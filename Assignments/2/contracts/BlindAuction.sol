@@ -30,6 +30,7 @@ contract BlindAuction {
     /// @param pendingReturns the value to return to each bidder
     /// @param bidded the boolean to track which addresses have bidded.
     /// @param revealed the boolean to track which addresses have revealed.
+    /// @param pubkey stores the pubkeys of the bidders sent over with the bids
     struct auctions {
         uint256 auction_id;
         address payable beneficiary;
@@ -98,7 +99,6 @@ contract BlindAuction {
         bool bidplaced;
         bool revealed;
         uint256 finalBid;
-        
     }
 
     // Errors that describe failures.
@@ -163,10 +163,13 @@ contract BlindAuction {
     ///@dev announce winner
     /// @param Auction_id is the id of the auction
     /// @param winner is the address of the winner
-    event WinnerChosen(uint256 Auction_id, 
-    address winner,
-    string pubkey,
-    uint256 winningBid
+    ///@param pubkey is the public key of the winner
+    ///@param winningBid is the value of the winning bid
+    event WinnerChosen(
+        uint256 Auction_id,
+        address winner,
+        string pubkey,
+        uint256 winningBid
     );
 
     ///@dev bid revealed
@@ -443,7 +446,12 @@ contract BlindAuction {
     // function that can be used to bid in an auction
     /// @param blindedBid is the hashed version of bid
     /// @param auction_id is the id of the auction
-    function bid(bytes32 blindedBid, uint256 auction_id,string calldata pubkey)
+    ///@param pubkey is the public key of the bidder
+    function bid(
+        bytes32 blindedBid,
+        uint256 auction_id,
+        string calldata pubkey
+    )
         external
         payable
         onlyBefore(Auctions[auction_id].biddingEnd)
@@ -490,8 +498,9 @@ contract BlindAuction {
             Auctions[auction_id].revealedBidders.push(msg.sender);
             Auctions[auction_id].revealed[msg.sender] = true;
             refund += bidToCheck.deposit;
-            if (bidToCheck.deposit >= 2*value) {
-                if (placeBid(auction_id, msg.sender, value)) refund -= 2*value;
+            if (bidToCheck.deposit >= 2 * value) {
+                if (placeBid(auction_id, msg.sender, value))
+                    refund -= 2 * value;
                 emit BidRevealed(auction_id, msg.sender);
             } else emit DepositNotEnough(auction_id, msg.sender);
         }
@@ -522,7 +531,7 @@ contract BlindAuction {
             // Refund the previously highest bidder.
             Auctions[auction_id].pendingReturns[
                 Auctions[auction_id].highestBidder
-            ] += 2*Auctions[auction_id].highestBid;
+            ] += 2 * Auctions[auction_id].highestBid;
         }
         Auctions[auction_id].highestBid = value;
         Auctions[auction_id].highestBidder = bidder;
@@ -588,19 +597,21 @@ contract BlindAuction {
                 withdraw(auction_id, Auctions[auction_id].revealedBidders[i]);
             }
             //Auctions[auction_id].beneficiary.transfer(
-                //Auctions[auction_id].highestBid
-           // );
-            emit WinnerChosen(auction_id, Auctions[auction_id].winner,
-            Auctions[auction_id].pubkey[Auctions[auction_id].winner],
-            Auctions[auction_id].winningBid);
+            //Auctions[auction_id].highestBid
+            // );
+            emit WinnerChosen(
+                auction_id,
+                Auctions[auction_id].winner,
+                Auctions[auction_id].pubkey[Auctions[auction_id].winner],
+                Auctions[auction_id].winningBid
+            );
         }
     }
 
-
-/// @dev Sale of item from seller's side
+    /// @dev Sale of item from seller's side
     /// @dev Transaction from the seller
     /// @param auction_id is the id of the item being sold_
-    /// @dev H is the unique string for the item
+    /// @param H is the unique string for the item
     /// @dev assume the seller is fair,will provide the right item
     function sellItem(uint256 auction_id, string calldata H)
         external
@@ -608,10 +619,9 @@ contract BlindAuction {
         validAuctionId(auction_id)
         auctionEnded(auction_id)
         onlyBeneficiary(auction_id)
-        
     {
         require(
-            msg.value == 2*Auctions[auction_id].winningBid,
+            msg.value == 2 * Auctions[auction_id].winningBid,
             "You have not paid right the security deposit"
         );
 
@@ -619,6 +629,9 @@ contract BlindAuction {
         //  Auctions[auction_id].beneficiary.transfer(Auctions[auction_id].winningBid);
     }
 
+    /// @dev Confirmation of delivery
+    /// @dev Transaction from the winner
+    /// @param auction_id is the id of the item being sold_
     function confirmDelivery(uint256 auction_id)
         external
         payable
@@ -638,5 +651,3 @@ contract BlindAuction {
         emit deliveryComplete(auction_id);
     }
 }
-
-

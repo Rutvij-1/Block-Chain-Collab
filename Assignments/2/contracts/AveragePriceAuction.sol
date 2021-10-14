@@ -584,7 +584,7 @@ contract AveragePriceAuction {
     /// @dev Sale of item from seller's side
     /// @dev Transaction from the seller
     /// @param auction_id is the id of the item being sold_
-    /// @dev H is the unique string for the item
+    /// @param H is the unique string for the item
     /// @dev assume the seller is fair,will provide the right item
     function sellItem(uint256 auction_id, string calldata H)
         external
@@ -592,10 +592,9 @@ contract AveragePriceAuction {
         validAuctionId(auction_id)
         auctionEnded(auction_id)
         onlyBeneficiary(auction_id)
-        
     {
         require(
-            msg.value == 2*Auctions[auction_id].winningBid,
+            msg.value == 2 * Auctions[auction_id].winningBid,
             "You have not paid right the security deposit"
         );
 
@@ -603,6 +602,9 @@ contract AveragePriceAuction {
         //  Auctions[auction_id].beneficiary.transfer(Auctions[auction_id].winningBid);
     }
 
+    /// @dev Confirmation of delivery
+    /// @dev Transaction from the winner
+    /// @param auction_id is the id of the item being sold_
     function confirmDelivery(uint256 auction_id)
         external
         payable
