@@ -77,56 +77,77 @@ class AuctionHouse extends Component {
     }
   };
 
-	sellItem = (auction_id) => async (e) => {
-    e.preventDefault();
-		const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-		let marketListings = await this.props.market.methods.fetchalllistings().call({ from: accounts[0] });
-		let pubkey = await getPublicKey(marketListings[auction_id].buyer);
-		let secr = await get_secret(pubkey, this.state.formData.unique_string);
-		let res = await this.state.market.methods.sellIstem(auction_id,secr).send({from: this.state.currentAccount});
-		let sent_string = await res.logs[0].args.H;
-		this.props.set_string(sent_string);
-		console.log(sent_string);
-	};
-
 	buyItem = (auction_id) => async (e) => {
     e.preventDefault();
-		const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
 		let pubkey = await getPublicKey(this.state.currentAccount);
 		try{
-			let res = await this.state.market.methods.requestBuy(auction_id,pubkey).send({ from: accounts[0] });
+			let res = await this.state.market.methods.requestBuy(auction_id,pubkey).send({ from: this.props.account });
 			window.location.reload(false);
 		} catch(error){
 			alert(`error`);
 		}
 	};
 
-	confirm = (auction_id) => async (e) => {
+	confirm = (auction_id, type) => async (e) => {
     e.preventDefault();
-		const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
+    const { market, blind_contract, vickrey_contract, average_contract, currentAccount } = this.state
 		try{
-			await this.state.market.methods.confirmDelivery(auction_id).send({ from: accounts[0] });
-			let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
-			//decrypt using the private key offchain
-			let buyer_private_key = await getPrivateKey(this.state.currentAccount);
-			try{
-				let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
-			} catch(err){
-				alert(`Wrong key`);
-			}
+      if (type === "Normal Listing") {
+        await market.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+        let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+        //decrypt using the private key offchain
+        let buyer_private_key = await getPrivateKey(currentAccount);
+        try{
+          let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          console.log(sent_item);
+        } catch(err){
+          alert(`Wrong key`);
+        }
+      }
+      else if (type === "Blind Auction") {
+        await blind_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+        let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+        console.log(this.props.stringvalue, cipher);
+        //decrypt using the private key offchain
+        let buyer_private_key = await getPrivateKey(currentAccount);
+        try{
+          let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          console.log(sent_item);
+        } catch(err){
+          alert(`Wrong key`);
+        }
+      } else if (type === "Vikrey Auction") {
+        await vickrey_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+        let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+        //decrypt using the private key offchain
+        let buyer_private_key = await getPrivateKey(currentAccount);
+        try{
+          let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          console.log(sent_item);
+        } catch(err){
+          alert(`Wrong key`);
+        }
+      } else {
+        await average_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+        let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+        //decrypt using the private key offchain
+        let buyer_private_key = await getPrivateKey(currentAccount);
+        try{
+          let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          console.log(sent_item);
+        } catch(err){
+          alert(`Wrong key`);
+        }
+      }
+			
 		} catch(error){
-			alert(`error`);
+			alert(`Error! Could not confirm.`);
 		}
 	};
 
   makeBid = (auction_id, type) => async (e) => {
     e.preventDefault();
-		const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-    const { value, secret_key, deposit } = this.state.formData;
+    const { value, secret_key, deposit, publickey } = this.state.formData;
     const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
     this.setState({ makebid: !this.state.makebid });
     try {
@@ -138,7 +159,8 @@ class AuctionHouse extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
+          parseInt(auction_id),
+          publickey
         ).send({
           from: currentAccount,
           value: deposit
@@ -151,8 +173,9 @@ class AuctionHouse extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
-        ).send({
+          parseInt(auction_id),
+          publickey
+          ).send({
           from: currentAccount,
           value: deposit
         });
@@ -164,58 +187,22 @@ class AuctionHouse extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
+          parseInt(auction_id),
+          publickey
         ).send({
           from: currentAccount,
           value: deposit
         });
       }
+			window.location.reload(false);
     } catch (error) {
-      alert(`Error: ${error}`);
+			alert(`Error: ${error.message}`);
     }
   }
 
-  endAuction = (auction_id, type) => async (e) => {
-    e.preventDefault();
-    const { market, blind_contract, vickrey_contract, average_contract } = this.state;
-    try {
-			if (type === "Normal Listing") {
-        await market.methods.sellItem(
-          parseInt(auction_id),
-					this.state.formData.unique_string
-        ).send({
-          from: this.state.currentAccount
-        });
-      }
-      else if (type === "Blind Auction") {
-        await blind_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      } else if (type === "Vikrey Auction") {
-        await vickrey_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      } else {
-        await average_contract.methods.auctionEnd(
-          parseInt(auction_id)
-        ).send({
-          from: this.state.currentAccount
-        });
-      }
-    } catch (error) {
-			alert(`Error: ${error}`);
-    }
-  };
-
   revealBid = (auction_id, type) => async (e) => {
     e.preventDefault();
-    const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-		const { value, secret_key } = this.state.formData;
+    const { value, secret_key } = this.state.formData;
     const { blind_contract, vickrey_contract, average_contract, web3, currentAccount } = this.state
     try {
       if (type === "Blind Auction") {
@@ -243,9 +230,96 @@ class AuctionHouse extends Component {
           from: currentAccount
         });
       }
-      window.location.reload(false);
+			window.location.reload(false);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+			alert(`Error: ${error.message}`);
+    }
+  };
+
+  sellItem = (auction_id, type) => async (e) => {
+    try {
+      if (type === "Normal Listing") {
+        let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
+        let pubkey = await getPublicKey(marketListings[auction_id].buyer);
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let res = await this.state.market.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount
+        });
+        let sent_string = await res.logs[0].args.H;
+        this.props.set_string(sent_string);
+      }
+      else if (type === "Blind Auction") {
+        let marketListings = await this.props.blind_contract.methods.getallauctions().call({ from: this.props.account });
+        let pubkey = await getPublicKey(marketListings[auction_id].buyer);
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let res = await this.state.blind_contract.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount
+        });
+        let sent_string = await res.logs[0].args.H;
+        this.props.set_string(sent_string);
+        console.log(`sent_String: ${sent_string}`);
+      } else if (type === "Vikrey Auction") {
+        let marketListings = await this.props.vickrey_contract.methods.getallauctions().call({ from: this.props.account });
+        let pubkey = await getPublicKey(marketListings[auction_id].buyer);
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let res = await this.state.vickrey_contract.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount
+        });
+        let sent_string = await res.logs[0].args.H;
+        this.props.set_string(sent_string);
+      } else {
+        let marketListings = await this.props.average_contract.methods.getallauctions().call({ from: this.props.account });
+        let pubkey = await getPublicKey(marketListings[auction_id].buyer);
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let res = await this.state.average_contract.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount
+        });
+        let sent_string = await res.logs[0].args.H;
+        this.props.set_string(sent_string);
+      }
+    } catch (error) {
+      console.log(error);
+			alert(`Error: ${error}`);
+    }
+	};
+
+  endAuction = (auction_id, type) => async (e) => {
+    e.preventDefault();
+    const { market, blind_contract, vickrey_contract, average_contract } = this.state;
+    try {
+			if (type === "Normal Listing") {
+        await market.methods.sellItem(
+          parseInt(auction_id),
+					this.state.formData.unique_string
+        ).send({
+          from: this.state.currentAccount
+        });
+      }
+      else if (type === "Blind Auction") {
+        await blind_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.props.account
+        });
+      } else if (type === "Vikrey Auction") {
+        await vickrey_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.state.currentAccount
+        });
+      } else {
+        await average_contract.methods.auctionEnd(
+          parseInt(auction_id)
+        ).send({
+          from: this.state.currentAccount
+        });
+      }
+    } catch (error) {
+			alert(`Error: ${error.message}`);
     }
   };
 
@@ -313,19 +387,19 @@ class AuctionHouse extends Component {
 													</>
 												:
                         (status === 'Reveal Time Over') ?
-                          <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="danger">End Auction</Button>
+                          <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
                           :
                           <Button variant="outline-success" disabled>Active</Button>
                         :
 												(type === "Normal")?
 													(status === 'Active') ?
-													<Button variant="primary" onClick={this.buyItem(listing.auction_id, listing.type)}>Buy</Button>
+													<Button variant="primary" onClick={this.buyItem(listing.auction_id, listing.type)}>Buy Item</Button>
 													:
 													(status === 'Requested') ?
 													<Button variant="info" disabled>Requested to Buy</Button>
 													:
 													(status === 'Sold') ?
-													<Button variant="primary" onClick={this.confirm(listing.auction_id)}>Confirm Checkout</Button>
+													<Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
 													:
 													<Button variant="outline-success" disabled>Delivered</Button>
 												:
@@ -337,11 +411,14 @@ class AuctionHouse extends Component {
                               </div>
                               :
                               <div>
-                                <InputGroup>
-                                  <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
-                                  <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-                                  <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount" />
-                                </InputGroup>
+                                 <InputGroup>
+                                <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
+                                <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
+                              </InputGroup>
+                              <InputGroup>
+                                <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount (>2*Bid Amount)" />
+                                <input type="string" className="form-control" id="publickey" required onChange={this.handleChange} placeholder="Public Key" />
+                              </InputGroup>
                                 <Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
                               </div>
                             }

@@ -87,22 +87,67 @@ class MyAuctions extends Component {
       alert(`Loading error...`);
 		}
   };
-
+  
   handleChange(e) {
     e.preventDefault();
     const formData = Object.assign({}, this.state.formData);
     formData[e.target.id] = e.target.value;
     this.setState({ formData: formData });
   };
-
-	sellItem = (auction_id) => async (e) => {
-		let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
-		let pubkey = await getPublicKey(marketListings[auction_id].buyer);
-		let secr = await get_secret(pubkey, this.state.formData.unique_string);
-		let res = await this.state.market.methods.sellIstem(auction_id,secr).send({from: this.state.currentAccount});
-		let sent_string = await res.logs[0].args.H;
-		this.props.set_string(sent_string);
-		console.log(sent_string);
+  
+	sellItem = (auction_id, type) => async (e) => {
+    try {
+      if (type === "Normal Listing") {
+        let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
+        let pubkey = marketListings[auction_id].pubkey;
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let res = await this.state.market.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount
+        });
+        let sent_string = await res.logs[0].args.H;
+        this.props.set_string(sent_string);
+      }
+      else if (type === "Blind Auction") {
+        let marketListings = await this.props.blind_contract.methods.getallauctions().call({ from: this.props.account });
+        let pubkey = marketListings[auction_id].pubkey;
+        console.log(pubkey);
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let val = (marketListings[auction_id].finalBid*2);
+        let res = await this.state.blind_contract.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount,
+          value: val
+        });
+        let sent_string = 'sup'
+        console.log(res.events.encryptedKey);
+        // await res.logs[0].args.H;
+        this.props.set_string(sent_string);
+        console.log(`sent_String: ${sent_string}`);
+      } else if (type === "Vikrey Auction") {
+        let marketListings = await this.props.vickrey_contract.methods.getallauctions().call({ from: this.props.account });
+        let pubkey = marketListings[auction_id].pubkey;
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let res = await this.state.vickrey_contract.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount
+        });
+        let sent_string = await res.logs[0].args.H;
+        this.props.set_string(sent_string);
+      } else {
+        let marketListings = await this.props.average_contract.methods.getallauctions().call({ from: this.props.account });
+        let pubkey = marketListings[auction_id].pubkey;
+        let secr = await get_secret(pubkey, this.state.formData.unique_string);
+        let res = await this.state.average_contract.methods.sellItem(auction_id,secr)
+        .send({
+          from: this.state.currentAccount
+        });
+        let sent_string = await res.logs[0].args.H;
+        this.props.set_string(sent_string);
+      }
+    } catch (error) {
+			alert(`Error: ${error.message}`);
+    }
 	};
 
   endAuction = (auction_id, type) => async (e) => {
@@ -189,11 +234,15 @@ class MyAuctions extends Component {
 													:
 													<>
 													<input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
-													<Button variant="success" onClick={this.sellItem(listing.auction_id)}>Sell Item</Button>
+													<Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
 													</>
 												:
 												(status === 'Ended')?
-													<p>Auction Ended Successfully. <br/> Winner: {listing.highestBidder? listing.highestBidder: "None"} <br/> Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</p>
+                        <>
+                          <input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
+													<Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
+													<p>Auction Ended Successfully. <br/> Winner: {listing.winner? listing.winner: "None"} <br/> Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</p>
+                          </>
 													:
 													(status === 'Active') ?
 														<Button variant="outline-success" disabled>Active</Button>

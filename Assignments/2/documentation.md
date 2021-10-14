@@ -83,3 +83,10 @@ const EthCrypto = require('eth-crypto');
     - Checking whether the buyer/seller are eligible to execute a particular method
     - Checking the sufficient balance of an account before transaction
     - Checking if the string of the item has length less than or equal to 50.
+
+
+#### UI Design
+- The UI has been divided into 4 main parts:
+    - Auctions: Fetches all active auction/market listings
+    - Create Auction: Enables the user account to add their own item as listing/auction in the market
+    - MyAuctions: Enables the user

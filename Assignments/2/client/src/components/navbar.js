@@ -32,6 +32,10 @@ class Navbr extends Component{
           <Button variant="dark" className="justify-content-end"> My Bids
           </Button>
         </Link>
+        <Link to="/events">
+          <Button variant="dark" className="justify-content-end"> Event Logs
+          </Button>
+        </Link>
       </Container>
       </Navbar>
     </>

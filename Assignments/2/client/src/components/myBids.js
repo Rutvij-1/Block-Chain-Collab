@@ -100,26 +100,66 @@ class MyBids extends Component {
 		}
 	};
 
-	confirm = (auction_id) => async (e) => {
+	confirm = (auction_id, type) => async (e) => {
     e.preventDefault();
+    const { market, blind_contract, vickrey_contract, average_contract, currentAccount } = this.state
 		try{
-			await this.state.market.methods.confirmDelivery(auction_id).send({ from: this.props.account });
-			let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
-			//decrypt using the private key offchain
-			let buyer_private_key = await getPrivateKey(this.state.currentAccount);
-			try{
-				let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
-			} catch(err){
-				alert(`Wrong key`);
-			}
+      if (type === "Normal Listing") {
+        await market.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+        let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+        //decrypt using the private key offchain
+        let buyer_private_key = await getPrivateKey(currentAccount);
+        try{
+          let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          console.log(sent_item);
+        } catch(err){
+          alert(`Wrong key`);
+        }
+      }
+      else if (type === "Blind Auction") {
+        await blind_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+        let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+        //decrypt using the private key offchain
+        
+        let buyer_private_key = await getPrivateKey(currentAccount);
+        try{
+          let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          console.log(sent_item);
+        } catch(err){
+          alert(`Wrong key`);
+        }
+      } else if (type === "Vikrey Auction") {
+        await vickrey_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+        let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+        //decrypt using the private key offchain
+        let buyer_private_key = await getPrivateKey(currentAccount);
+        try{
+          let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          console.log(sent_item);
+        } catch(err){
+          alert(`Wrong key`);
+        }
+      } else {
+        await average_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+        let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
+        //decrypt using the private key offchain
+        let buyer_private_key = await getPrivateKey(currentAccount);
+        try{
+          let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          console.log(sent_item);
+        } catch(err){
+          alert(`Wrong key`);
+        }
+      }
+			
 		} catch(error){
-			alert(`error`);
+			alert(`Error! Could not confirm.`);
 		}
 	};
 
   makeBid = (auction_id, type) => async (e) => {
     e.preventDefault();
-    const { value, secret_key, deposit } = this.state.formData;
+    const { value, secret_key, deposit, publickey } = this.state.formData;
     const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
     this.setState({ makebid: !this.state.makebid });
     try {
@@ -131,7 +171,8 @@ class MyBids extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
+          parseInt(auction_id),
+          publickey
         ).send({
           from: currentAccount,
           value: deposit
@@ -144,8 +185,9 @@ class MyBids extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
-        ).send({
+          parseInt(auction_id),
+          publickey
+          ).send({
           from: currentAccount,
           value: deposit
         });
@@ -157,7 +199,8 @@ class MyBids extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
+          parseInt(auction_id),
+          publickey
         ).send({
           from: currentAccount,
           value: deposit
@@ -271,7 +314,7 @@ class MyBids extends Component {
 											<Button variant="info" disabled>Requested to Buy</Button>
 											:
 											(status === 'Sold') ?
-											<Button variant="primary" onClick={this.confirm(listing.auction_id)}>Confirm Checkout</Button>
+											<Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
 											:
 											<Button variant="outline-success" disabled>Delivered</Button>
 											:
@@ -287,7 +330,10 @@ class MyBids extends Component {
                               <InputGroup>
                                 <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
                                 <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-                                <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount" />
+                              </InputGroup>
+                              <InputGroup>
+                                <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount (>2*Bid Amount)" />
+                                <input type="string" className="form-control" id="publickey" required onChange={this.handleChange} placeholder="Public Key" />
                               </InputGroup>
                               <Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
                             </div>
@@ -321,8 +367,11 @@ class MyBids extends Component {
                             (status === 'Ended') ?
                               <>
                                 {listing.highestBidder === this.state.currentAccount ?
-                                  <Button variant="success" disabled>Auction Won! <br/> 
+                                 <>
+                                 <Button variant="success" disabled>Auction Won! <br/> 
 																	Bid Price: {listing.finalBid>0?listing.finalBid:"NA"} </Button>
+											            <Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
+                                  </>
                                   :
                                   <Button variant="info" disabled>Auction Ended. <br/>
 																	Won by: {listing.winner?listing.winner:"None"} <br/>

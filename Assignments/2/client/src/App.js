@@ -14,6 +14,7 @@ import CreateAuctions from "./components/createAuctions";
 import MyBids from "./components/myBids";
 import MyAuctions from "./components/myAuctions";
 import Dashboard from "./components/home";
+import AllEvents from "./components/allevents";
 
 class App extends Component {
   constructor(props) {
@@ -38,7 +39,8 @@ class App extends Component {
       error: null,
       eventsuccess: [],
       eventfails:["ItemUnsold","DepositNotEnough","BidRevealFailed","Aborted"],
-      activealert: false
+      activealert: false,
+      logs: []
     };
 
     this.activeListings = this.activeListings.bind(this);
@@ -135,18 +137,23 @@ class App extends Component {
     market.events.allEvents(
       (error,res)=>{
         if(error){
-          this.setState({error, activealert:true});
+          console.log(error.reason);
+          this.setState({error:error.reason, activealert:true, logs:[...this.state.logs,error]});
         }else{
-          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true});
+          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
         }
       }
     )
     blind.events.allEvents(
       (error,res)=>{
+        console.log(res, error, this.state.logs);
         if(error){
-          this.setState({error, activealert:true});
+          console.log(error.reason);
+          localStorage.setItem("event",error);
+          this.setState({error:error.reason, activealert:true, logs:[...this.state.logs,error]});
         }else{
-          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true});
+          localStorage.setItem("event",res);
+          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
         }
       }
     )
@@ -154,7 +161,7 @@ class App extends Component {
     vikrey.events.allEvents(
       (error,res)=>{
         if(error){
-          this.setState({error, activealert:true});
+          this.setState({error, activealert:true, logs:[...this.state.logs,error]});
         }else{
           this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true});
         }
@@ -163,9 +170,9 @@ class App extends Component {
     average.events.allEvents(
       (error,res)=>{
         if(error){
-          this.setState({error, activealert:true});
+          this.setState({error, activealert:true, logs:[...this.state.logs,error]});
         }else{
-          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true});
+          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
         }
       }
     )
@@ -225,7 +232,8 @@ class App extends Component {
       <br/>
         </div>;
     }
-    console.log(this.state.error, this.state.eventsuccess);
+    // console.log(this.state.error, this.state.eventsuccess);
+    console.log(this.state.logs);
     return (
 <div className="App">
       <Router basename="/">
@@ -254,16 +262,19 @@ class App extends Component {
            <Dashboard web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market}/>
           )}/>
           <Route exact path="/auctionhouse" render={(props) => (
-           <AuctionHouse web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market}/>
-          )}/>
-          <Route path="/myauctions" exact render={(props) => (
-           <MyAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market}/>
-          )}/>
-          <Route path="/mybids" exact render={(props) => (
-           <MyBids web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market}/>
+           <AuctionHouse web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market}  set_string={this.set_string} stringvalue={this.state.stringvalue}/>
           )}/>
           <Route path="/create" exact render={(props) => (
-           <CreateAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} />
+             <CreateAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} />
+            )}/>
+          <Route path="/myauctions" exact render={(props) => (
+           <MyAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} set_string={this.set_string}/>
+          )}/>
+          <Route path="/mybids" exact render={(props) => (
+           <MyBids web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} stringvalue={this.state.stringvalue}/>
+          )}/>
+          <Route path="/events" exact render={(props) => (
+           <AllEvents logs={this.state.logs}/>
           )}/>
       </Router>
         </div>
