@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { Navbar, Container, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import "./navbar.css";
 
 class Navbr extends Component{
@@ -11,16 +12,26 @@ class Navbr extends Component{
     <>
       <Navbar bg="dark" variant="dark" sticky="top">
       <Container>
-        <Navbar.Brand href="/">Tripple Auction</Navbar.Brand>
-          <Button variant="dark" className="justify-content-end" onClick={this.props.activeListings}> Auctions
+        <Link to="/home">
+          <Navbar.Brand>Tripple Auction
+          </Navbar.Brand>
+        </Link>
+        <Link to="/auctionhouse">
+          <Button variant="dark" className="justify-content-end"> Auctions
           </Button>
-          <Button variant="dark" className="justify-content-end" onClick={this.props.showcreate}> Create Auction
+        </Link>
+        <Link to="/create">
+          <Button variant="dark" className="justify-content-end"> Create Auction
           </Button>
-          <Button variant="dark" className="justify-content-end" onClick={this.props.showauctions}> My Auctions
+        </Link>
+        <Link to="/myauctions">
+          <Button variant="dark" className="justify-content-end"> My Auctions
           </Button>
-          <Button variant="dark" className="justify-content-end" onClick={this.props.showbids}> My Bids
+        </Link>
+        <Link to="/mybids">
+          <Button variant="dark" className="justify-content-end"> My Bids
           </Button>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        </Link>
       </Container>
       </Navbar>
     </>
