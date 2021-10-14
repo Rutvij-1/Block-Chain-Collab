@@ -28,6 +28,8 @@ contract Market {
         string item_description;
         bool sold_or_withdrawn;
         bool buyer_alloted;
+        string pubkey;
+        string H;
         State state;
     }
 
@@ -82,14 +84,20 @@ contract Market {
     /// @notice beneficiary cannot be buyer of the same item
     /// @param auction_id Id of the listing.
     modifier ValidBuyer(uint256 auction_id) {
-        require(Listings[auction_id].beneficiary != msg.sender, "Invalid Buyer");
+        require(
+            Listings[auction_id].beneficiary != msg.sender,
+            "Invalid Buyer"
+        );
         _;
     }
 
     /// @notice Buyer cannot be beneficiary of the same item
     /// @param auction_id Id of the listing.
     modifier Validbeneficiary(uint256 auction_id) {
-        require(Listings[auction_id].buyer != msg.sender, "Invalid beneficiary");
+        require(
+            Listings[auction_id].buyer != msg.sender,
+            "Invalid beneficiary"
+        );
         _;
     }
 
@@ -164,6 +172,8 @@ contract Market {
             item_description,
             false,
             false,
+            "",
+            "",
             State.Active
         );
         /// @dev emit the update
@@ -239,6 +249,7 @@ contract Market {
         /// Let the beneficiary know you have found a buyer
         Listings[auction_id].buyer = msg.sender;
         Listings[auction_id].buyer_alloted = true;
+        Listings[auction_id].pubkey = pubkey;
         emit PurchaseRequested(Listings[auction_id], msg.sender, pubkey);
     }
 
@@ -260,6 +271,7 @@ contract Market {
             "You have not paid the security deposit"
         );
         Listings[auction_id].state = State.Sold;
+        Listings[auction_id].H = H;
         /// Listings[auction_id].sold_or_withdrawn = true;
 
         emit encryptedKey(auction_id, H);
@@ -278,7 +290,9 @@ contract Market {
     {
         /// Refund the beneficiary
         Listings[auction_id].sold_or_withdrawn = true;
-        Listings[auction_id].beneficiary.transfer(3 * Listings[auction_id].price);
+        Listings[auction_id].beneficiary.transfer(
+            3 * Listings[auction_id].price
+        );
         /// Refund the buyer
         Listings[auction_id].buyer.transfer(Listings[auction_id].price);
         activelistings -= 1;

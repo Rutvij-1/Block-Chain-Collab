@@ -33,6 +33,7 @@ contract VikreyAuction {
     /// @param secondHighestBid the secondHighest Bid
     /// @param revealedBidders the array to store bidders who reveal their bid to return their due after auction is over
     /// @param pubkey stores the pubkeys of the bidders sent over with the bids
+    /// @param H secret string to sell item encrypted with buyer's public key
     struct auctions {
         uint256 auction_id;
         address payable beneficiary;
@@ -48,6 +49,7 @@ contract VikreyAuction {
         address payable[] revealedBidders;
         address payable winner;
         uint256 winningBid;
+        string H;
         //address payable secondHighestBidder;
         mapping(address => Bid) bids;
         // Allowed withdrawals of previous bids
@@ -92,6 +94,7 @@ contract VikreyAuction {
     /// @param revealed bool to tell whether the person calling the revealed their bid or not
     /// @param finalBid the final price at which the item was sold
     /// @param pubkey public key of the winner
+    /// @param H secret string to sell item encrypted with buyer's public key
     struct auction_all_listings {
         uint256 auction_id;
         address payable beneficiary;
@@ -105,6 +108,7 @@ contract VikreyAuction {
         bool revealed;
         uint256 finalBid;
         string pubkey;
+        string H;
     }
 
     // Errors that describe failures.
@@ -343,8 +347,8 @@ contract VikreyAuction {
             0,
             new address payable[](0),
             address(0),
-            0
-            //address(0)
+            0,
+            ""
         );
         emit AuctionStarted(auction_id, item_name, item_description);
         emit BiddingStarted(auction_id, bidding_end);
@@ -411,7 +415,8 @@ contract VikreyAuction {
                 currentauction.bidded[msg.sender],
                 currentauction.revealed[msg.sender],
                 currentauction.highestBid,
-                pubkey
+                pubkey,
+                currentauction.H
             );
         }
         return all_auctions;
@@ -590,7 +595,6 @@ contract VikreyAuction {
             Auctions[auction_id].winner = Auctions[auction_id].highestBidder;
             Auctions[auction_id].winningBid = Auctions[auction_id].highestBid;
             Auctions[auction_id].ended = true;
-            Auctions[auction_id].sold = true;
             activeauctions -= 1;
             //Auctions[auction_id].beneficiary.transfer(
             //    Auctions[auction_id].highestBid
@@ -611,7 +615,6 @@ contract VikreyAuction {
             Auctions[auction_id].winningBid = Auctions[auction_id]
                 .secondHighestBid;
             Auctions[auction_id].ended = true;
-            Auctions[auction_id].sold = true;
             activeauctions -= 1;
             uint256 difference = 2 *
                 (Auctions[auction_id].highestBid -
@@ -655,6 +658,7 @@ contract VikreyAuction {
             msg.value == 2 * Auctions[auction_id].winningBid,
             "You have not paid right the security deposit"
         );
+        Auctions[auction_id].H = H;
 
         emit encryptedKey(auction_id, H);
         //  Auctions[auction_id].beneficiary.transfer(Auctions[auction_id].winningBid);
@@ -675,6 +679,7 @@ contract VikreyAuction {
         uint256 prof = 3 * amt;
         // emit deliveryComplete(auction_id);
         Auctions[auction_id].pendingReturns[Auctions[auction_id].winner] = 0;
+        Auctions[auction_id].sold = true;
 
         Auctions[auction_id].beneficiary.transfer(prof);
         Auctions[auction_id].winner.transfer(amt);

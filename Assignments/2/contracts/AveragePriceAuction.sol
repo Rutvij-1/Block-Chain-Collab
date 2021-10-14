@@ -35,6 +35,7 @@ contract AveragePriceAuction {
     /// @param winningBid Bid the winner placed
     /// @param bidders addresses of the bidders
     /// @param pubkey stores the pubkeys of the bidders sent over with the bids
+    /// @param H secret string to sell item encrypted with buyer's public key
     struct auctions {
         uint256 auction_id;
         address payable beneficiary;
@@ -49,6 +50,7 @@ contract AveragePriceAuction {
         address payable[] revealedBidders;
         address payable winner;
         uint256 winningBid;
+        string H;
         mapping(uint256 => address payable) bidders;
         mapping(address => Bid) bids;
         // Allowed withdrawals of previous bids
@@ -93,6 +95,7 @@ contract AveragePriceAuction {
     /// @param revealed bool to tell whether the person calling the revealed their bid or not
     /// @param finalBid the final price at which the item was sold
     /// @param pubkey public key of the winner
+    /// @param H secret string to sell item encrypted with buyer's public key
     struct auction_all_listings {
         uint256 auction_id;
         address payable beneficiary;
@@ -106,6 +109,7 @@ contract AveragePriceAuction {
         bool revealed;
         uint256 finalBid;
         string pubkey;
+        string H;
     }
 
     // Errors that describe failures.
@@ -344,7 +348,8 @@ contract AveragePriceAuction {
             0,
             new address payable[](0),
             address(0),
-            0
+            0,
+            ""
         );
         emit AuctionStarted(auction_id, item_name, item_description);
         emit BiddingStarted(auction_id, bidding_end);
@@ -411,7 +416,8 @@ contract AveragePriceAuction {
                 currentauction.bidded[msg.sender],
                 currentauction.revealed[msg.sender],
                 currentauction.winningBid,
-                pubkey
+                pubkey,
+                currentauction.H
             );
         }
         return all_auctions;
@@ -562,7 +568,6 @@ contract AveragePriceAuction {
             }
             Auctions[auction_id].pendingReturns[winner] = 0;
             Auctions[auction_id].ended = true;
-            Auctions[auction_id].sold = true;
             Auctions[auction_id].winner = winner;
             Auctions[auction_id].winningBid = winning_bid;
             activeauctions -= 1;
@@ -599,6 +604,7 @@ contract AveragePriceAuction {
             msg.value == 2 * Auctions[auction_id].winningBid,
             "You have not paid right the security deposit"
         );
+        Auctions[auction_id].H = H;
 
         emit encryptedKey(auction_id, H);
         //  Auctions[auction_id].beneficiary.transfer(Auctions[auction_id].winningBid);
@@ -619,6 +625,7 @@ contract AveragePriceAuction {
         uint256 prof = 3 * amt;
         // emit deliveryComplete(auction_id);
         Auctions[auction_id].pendingReturns[Auctions[auction_id].winner] = 0;
+        Auctions[auction_id].sold = true;
 
         Auctions[auction_id].beneficiary.transfer(prof);
         Auctions[auction_id].winner.transfer(amt);

@@ -31,6 +31,7 @@ contract BlindAuction {
     /// @param bidded the boolean to track which addresses have bidded.
     /// @param revealed the boolean to track which addresses have revealed.
     /// @param pubkey stores the pubkeys of the bidders sent over with the bids
+    /// @param H secret string to sell item encrypted with buyer's public key
     struct auctions {
         uint256 auction_id;
         address payable beneficiary;
@@ -45,6 +46,7 @@ contract BlindAuction {
         address payable[] revealedBidders;
         address payable winner;
         uint256 winningBid;
+        string H;
         mapping(address => Bid) bids;
         // Allowed withdrawals of previous bids
         mapping(address => uint256) pendingReturns;
@@ -88,6 +90,7 @@ contract BlindAuction {
     /// @param revealed bool to tell whether the person calling the revealed their bid or not
     /// @param finalBid the final price at which the item was sold
     /// @param pubkey public key of the winner
+    /// @param H secret string to sell item encrypted with buyer's public key
     struct auction_all_listings {
         uint256 auction_id;
         address payable beneficiary;
@@ -101,6 +104,7 @@ contract BlindAuction {
         bool revealed;
         uint256 finalBid;
         string pubkey;
+        string H;
     }
 
     // Errors that describe failures.
@@ -376,7 +380,8 @@ contract BlindAuction {
             0,
             new address payable[](0),
             address(0),
-            0
+            0,
+            ""
         );
         emit AuctionStarted(auction_id, item_name, item_description);
         emit BiddingStarted(auction_id, bidding_end);
@@ -443,7 +448,8 @@ contract BlindAuction {
                 currentauction.bidded[msg.sender],
                 currentauction.revealed[msg.sender],
                 currentauction.highestBid,
-                pubkey
+                pubkey,
+                currentauction.H
             );
         }
         return all_auctions;
@@ -587,7 +593,6 @@ contract BlindAuction {
                 Auctions[auction_id].highestBid
             );
             Auctions[auction_id].ended = true;
-            Auctions[auction_id].sold = true;
             activeauctions -= 1;
             Auctions[auction_id].winner = Auctions[auction_id].highestBidder;
             Auctions[auction_id].winningBid = Auctions[auction_id].highestBid;
@@ -626,6 +631,7 @@ contract BlindAuction {
             msg.value == 2 * Auctions[auction_id].winningBid,
             "You have not paid right the security deposit"
         );
+        Auctions[auction_id].H = H;
 
         emit encryptedKey(auction_id, H);
         //  Auctions[auction_id].beneficiary.transfer(Auctions[auction_id].winningBid);
@@ -646,6 +652,7 @@ contract BlindAuction {
         uint256 prof = 3 * amt;
         // emit deliveryComplete(auction_id);
         Auctions[auction_id].pendingReturns[Auctions[auction_id].winner] = 0;
+        Auctions[auction_id].sold = true;
 
         Auctions[auction_id].beneficiary.transfer(prof);
         Auctions[auction_id].winner.transfer(amt);
