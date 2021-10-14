@@ -584,10 +584,11 @@ contract AveragePriceAuction {
         validAuctionId(auction_id)
         auctionEnded(auction_id)
         onlyBeneficiary(auction_id)
+        
     {
         require(
-            msg.value == 2 * Auctions[auction_id].winningBid,
-            "You have not paid the security deposit"
+            msg.value == 2*Auctions[auction_id].winningBid,
+            "You have not paid right the security deposit"
         );
 
         emit encryptedKey(auction_id, H);

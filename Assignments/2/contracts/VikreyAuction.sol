@@ -44,11 +44,15 @@ contract VikreyAuction {
         uint256 highestBid;
         uint256 secondHighestBid;
         address payable[] revealedBidders;
+        address payable winner;
+        uint256 winningBid;
+
         //address payable secondHighestBidder;
         mapping(address => Bid) bids;
         // Allowed withdrawals of previous bids
         mapping(address => uint256) pendingReturns;
         mapping(address => bool) bidded;
+        mapping(address => string) pubkey;
     }
 
     /// @dev structure for each display active Auction Listings
@@ -165,7 +169,11 @@ contract VikreyAuction {
     ///@dev announce winner
     /// @param Auction_id is the id of the auction
     /// @param winner is the address of the winner
-    event WinnerChosen(uint256 Auction_id, address winner);
+    event WinnerChosen(
+        uint256 Auction_id, 
+        address winner, 
+        string pubkey,
+        uint256 winning_bid);
 
     ///@dev bid revealed
     ///@param Auction_id is the id of the auction
@@ -200,6 +208,15 @@ contract VikreyAuction {
     ///@param bid_value refers to the bid
     event NewHighestBid(uint256 auction_id, address bidder, uint256 bid_value);
 
+    ///@dev event to send the hashed Item
+    ///@param auction_id is the id of the auction
+    ///@param H is the hashed passwords
+    event encryptedKey(uint256 auction_id, string H);
+
+    ///@dev to confirm delivery
+    ///@param auction_id is the id of the auction
+    event deliveryComplete(uint256 auction_id);
+
     /// @dev create a lists of all auctions
     mapping(uint256 => auctions) private Auctions;
 
@@ -216,38 +233,7 @@ contract VikreyAuction {
         _;
     }
 
-    // function integersToString(uint256 _i, uint256 _j)
-    //     internal
-    //     pure
-    //     returns (string memory)
-    // {
-    //     uint256 j = _i;
-    //     uint256 len;
-
-    //     while (j != 0) {
-    //         len++;
-    //         j /= 10;
-    //     }
-    //     j = _j;
-    //     while (j != 0) {
-    //         len++;
-    //         j /= 10;
-    //     }
-    //     len++;
-    //     bytes memory bstr = new bytes(len);
-    //     uint256 k = len - 1;
-
-    //     while (_j != 0) {
-    //         bstr[k--] = bytes1(uint8(48 + (_j % 10)));
-    //         _j /= 10;
-    //     }
-    //     bstr[k--] = bytes1(uint8(32));
-    //     while (_i != 0) {
-    //         bstr[k--] = bytes1(uint8(48 + (_i % 10)));
-    //         _i /= 10;
-    //     }
-    //     return string(bstr);
-    // }
+    
 
     modifier onlyBefore(uint256 _time) {
         // string memory str = "After time" + block.timestamp;
@@ -302,6 +288,20 @@ contract VikreyAuction {
     }
 
     //functions
+    modifier validAuctionId(uint256 auction_id) {
+        require(
+            auction_id < current_auction_id,
+            "Auction Id provided doesn't exist"
+        );
+        _;
+    }
+    modifier onlyWinner(uint256 auction_id) {
+        require(
+            msg.sender == Auctions[auction_id].winner,
+            "Only Winner can confirm purchase"
+        );
+        _;
+    }
 
     /// @notice returns balance of account
     /// @param account Address of the account.
@@ -342,7 +342,9 @@ contract VikreyAuction {
             address(0),
             0,
             0,
-            new address payable[](0)
+            new address payable[](0),
+            address(0),
+            0
             //address(0)
         );
         emit AuctionStarted(auction_id, item_name, item_description);
@@ -413,15 +415,20 @@ contract VikreyAuction {
     // function that can be used to bid in an auction
     /// @param blindedBid is the hashed version of bid
     /// @param auction_id is the id of the auction
-    function bid(bytes32 blindedBid, uint256 auction_id)
+    function bid(bytes32 blindedBid, 
+    uint256 auction_id,
+    string calldata pubkey
+    )
         external
         payable
         onlyBefore(Auctions[auction_id].biddingEnd)
         validBidder(auction_id)
         newBidder(auction_id)
+        validAuctionId(auction_id)
     {
         Auctions[auction_id].bids[msg.sender] = Bid(blindedBid, msg.value);
         Auctions[auction_id].bidded[msg.sender] = true;
+        Auctions[auction_id].pubkey[msg.sender] = pubkey;
         emit BidMade(msg.sender);
     }
 
@@ -442,6 +449,7 @@ contract VikreyAuction {
         onlyAfter(Auctions[auction_id].biddingEnd)
         onlyBefore(Auctions[auction_id].revealEnd)
         alreadyBidder(auction_id)
+        validAuctionId(auction_id)
     {
         uint256 refund = 0;
         bool success = false;
@@ -456,8 +464,8 @@ contract VikreyAuction {
         } else {
             Auctions[auction_id].revealedBidders.push(msg.sender);
             refund += bidToCheck.deposit;
-            if (bidToCheck.deposit >= value) {
-                if (placeBid(auction_id, msg.sender, value)) refund -= value;
+            if (bidToCheck.deposit >= 2*value) {
+                if (placeBid(auction_id, msg.sender, value)) refund -= 2*value;
                 emit BidRevealed(auction_id, msg.sender);
             } else emit DepositNotEnough(auction_id, msg.sender);
         }
@@ -508,12 +516,11 @@ contract VikreyAuction {
                 .highestBid;
             Auctions[auction_id].highestBid = value;
             Auctions[auction_id].highestBidder = bidder;*/
-            Auctions[auction_id].secondHighestBid = Auctions[auction_id]
-                .highestBid;
+            Auctions[auction_id].secondHighestBid = Auctions[auction_id].highestBid;
             Auctions[auction_id].highestBid = value;
             Auctions[auction_id].pendingReturns[
                 Auctions[auction_id].highestBidder
-            ] += Auctions[auction_id].secondHighestBid;
+            ] += 2*Auctions[auction_id].secondHighestBid;
 
             Auctions[auction_id].highestBidder = bidder;
             return true;
@@ -553,6 +560,7 @@ contract VikreyAuction {
         onlyAfter(Auctions[auction_id].revealEnd)
         onlyBeneficiary(auction_id)
         auctionActive(auction_id)
+        validAuctionId(auction_id)
     {
         //if (Auctions[auction_id].ended) revert AuctionEndAlreadyCalled();
         uint256 final_price = 0;
@@ -573,25 +581,31 @@ contract VikreyAuction {
                 Auctions[auction_id].highestBidder,
                 Auctions[auction_id].highestBid
             );
-
+            Auctions[auction_id].winner = Auctions[auction_id].highestBidder;
+            Auctions[auction_id].winningBid = Auctions[auction_id].highestBid;
             Auctions[auction_id].ended = true;
             Auctions[auction_id].sold = true;
             activeauctions -= 1;
-            Auctions[auction_id].beneficiary.transfer(
-                Auctions[auction_id].highestBid
-            );
-            emit WinnerChosen(auction_id, Auctions[auction_id].highestBidder);
+            //Auctions[auction_id].beneficiary.transfer(
+            //    Auctions[auction_id].highestBid
+            //);
+            emit WinnerChosen(auction_id, 
+            Auctions[auction_id].highestBidder,
+            Auctions[auction_id].pubkey[Auctions[auction_id].winner],
+            Auctions[auction_id].winningBid);
         } else {
             emit AuctionEnded(
                 auction_id,
                 Auctions[auction_id].highestBidder,
                 Auctions[auction_id].secondHighestBid
             );
+            Auctions[auction_id].winner = Auctions[auction_id].highestBidder;
+            Auctions[auction_id].winningBid = Auctions[auction_id].secondHighestBid;
             Auctions[auction_id].ended = true;
             Auctions[auction_id].sold = true;
             activeauctions -= 1;
-            uint256 difference = Auctions[auction_id].highestBid -
-                Auctions[auction_id].secondHighestBid;
+            uint256 difference = 2*(Auctions[auction_id].highestBid -
+                Auctions[auction_id].secondHighestBid);
             Auctions[auction_id].pendingReturns[
                 Auctions[auction_id].highestBidder
             ] += difference;
@@ -603,10 +617,54 @@ contract VikreyAuction {
             ) {
                 withdraw(auction_id, Auctions[auction_id].revealedBidders[i]);
             }
-            Auctions[auction_id].beneficiary.transfer(
-                Auctions[auction_id].secondHighestBid
-            );
-            emit WinnerChosen(auction_id, Auctions[auction_id].highestBidder);
+           // Auctions[auction_id].beneficiary.transfer(
+              //  Auctions[auction_id].secondHighestBid
+          //  );
+            emit WinnerChosen(auction_id, 
+            Auctions[auction_id].winner,
+            Auctions[auction_id].pubkey[Auctions[auction_id].winner],
+            Auctions[auction_id].winningBid);
         }
     }
+    /// @dev Sale of item from seller's side
+    /// @dev Transaction from the seller
+    /// @param auction_id is the id of the item being sold_
+    /// @dev H is the unique string for the item
+    /// @dev assume the seller is fair,will provide the right item
+    function sellItem(uint256 auction_id, string calldata H)
+        external
+        payable
+        validAuctionId(auction_id)
+        auctionEnded(auction_id)
+        onlyBeneficiary(auction_id)
+        
+    {
+        require(
+            msg.value == 2*Auctions[auction_id].winningBid,
+            "You have not paid right the security deposit"
+        );
+
+        emit encryptedKey(auction_id, H);
+        //  Auctions[auction_id].beneficiary.transfer(Auctions[auction_id].winningBid);
+    }
+
+    function confirmDelivery(uint256 auction_id)
+        external
+        payable
+        validAuctionId(auction_id)
+        onlyWinner(auction_id)
+        auctionEnded(auction_id)
+    {
+        /// Refund the seller
+        uint256 amt = Auctions[auction_id].winningBid;
+        uint256 prof = 3 * amt;
+        // emit deliveryComplete(auction_id);
+        Auctions[auction_id].pendingReturns[Auctions[auction_id].winner] = 0;
+
+        Auctions[auction_id].beneficiary.transfer(prof);
+        Auctions[auction_id].winner.transfer(amt);
+
+        emit deliveryComplete(auction_id);
+    }
+
 }
