@@ -512,11 +512,7 @@ contract AveragePriceAuction {
             Auctions[auction_id].pendingReturns[bidder] = 0;
             address payable payable_sender = bidder;
             payable_sender.transfer(value);
-            emit BidderRefunded(
-                auction_id,
-                bidder,
-                Auctions[auction_id].pendingReturns[bidder]
-            );
+            emit BidderRefunded(auction_id, bidder, value);
         }
     }
 
