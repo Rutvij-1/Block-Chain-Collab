@@ -92,6 +92,7 @@ contract AveragePriceAuction {
     /// @param bidplaced bool to tell whether the person calling the function bidded or not
     /// @param revealed bool to tell whether the person calling the revealed their bid or not
     /// @param finalBid the final price at which the item was sold
+    /// @param pubkey public key of the winner
     struct auction_all_listings {
         uint256 auction_id;
         address payable beneficiary;
@@ -104,6 +105,7 @@ contract AveragePriceAuction {
         bool bidplaced;
         bool revealed;
         uint256 finalBid;
+        string pubkey;
     }
 
     // Errors that describe failures.
@@ -394,6 +396,9 @@ contract AveragePriceAuction {
         );
         for (uint256 i = 0; i < current_auction_id; i++) {
             auctions storage currentauction = Auctions[i];
+            string memory pubkey = "";
+            if (currentauction.winner != address(0))
+                pubkey = currentauction.pubkey[currentauction.winner];
             all_auctions[i] = auction_all_listings(
                 currentauction.auction_id,
                 currentauction.beneficiary,
@@ -405,7 +410,8 @@ contract AveragePriceAuction {
                 currentauction.item_description,
                 currentauction.bidded[msg.sender],
                 currentauction.revealed[msg.sender],
-                currentauction.winningBid
+                currentauction.winningBid,
+                pubkey
             );
         }
         return all_auctions;

@@ -87,6 +87,7 @@ contract BlindAuction {
     /// @param bidplaced bool to tell whether the person calling the function bidded or not
     /// @param revealed bool to tell whether the person calling the revealed their bid or not
     /// @param finalBid the final price at which the item was sold
+    /// @param pubkey public key of the winner
     struct auction_all_listings {
         uint256 auction_id;
         address payable beneficiary;
@@ -99,6 +100,7 @@ contract BlindAuction {
         bool bidplaced;
         bool revealed;
         uint256 finalBid;
+        string pubkey;
     }
 
     // Errors that describe failures.
@@ -426,6 +428,9 @@ contract BlindAuction {
         );
         for (uint256 i = 0; i < current_auction_id; i++) {
             auctions storage currentauction = Auctions[i];
+            string memory pubkey = "";
+            if (currentauction.highestBidder != address(0))
+                pubkey = currentauction.pubkey[currentauction.highestBidder];
             all_auctions[i] = auction_all_listings(
                 currentauction.auction_id,
                 currentauction.beneficiary,
@@ -437,7 +442,8 @@ contract BlindAuction {
                 currentauction.item_description,
                 currentauction.bidded[msg.sender],
                 currentauction.revealed[msg.sender],
-                currentauction.highestBid
+                currentauction.highestBid,
+                pubkey
             );
         }
         return all_auctions;
