@@ -121,7 +121,7 @@ to install eth-crypto a webjs library to deal with encryption and decryption iss
 #### Running the backend
 
 ```
-truffle console 
+truffle develop 
 ```
 ```
 compile
