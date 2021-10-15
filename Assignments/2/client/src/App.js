@@ -136,44 +136,60 @@ class App extends Component {
   eventcheck(market, blind, vikrey, average) {
     market.events.allEvents(
       (error,res)=>{
+        let events = JSON.parse(localStorage.getItem("events"));
+        if(!events){
+          events=[]
+        }
         if(error){
+          events.push(error);
           console.log(error.reason);
           this.setState({error:error.reason, activealert:true, logs:[...this.state.logs,error]});
         }else{
+          events.push(res);
           this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
         }
+        localStorage.setItem("events",JSON.stringify(events));
       }
     )
     blind.events.allEvents(
       (error,res)=>{
         // console.log(res, error, this.state.logs);
+        let events = JSON.parse(localStorage.getItem("events"));
         if(error){
           console.log(error.reason);
-          localStorage.setItem("event",error);
+          events.push(error);
           this.setState({error:error.reason, activealert:true, logs:[...this.state.logs,error]});
         }else{
-          localStorage.setItem("event",res);
+          events.push(res);
           this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
         }
+        localStorage.setItem("events",JSON.stringify(events));
       }
     )
-      // console.log(`error`,error,`res`,res.event);
     vikrey.events.allEvents(
       (error,res)=>{
+        let events = JSON.parse(localStorage.getItem("events"));
         if(error){
+          events.push(error);
           this.setState({error, activealert:true, logs:[...this.state.logs,error]});
         }else{
+          events.push(res);
           this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true});
         }
+        localStorage.setItem("events",JSON.stringify(events));
       }
     )
     average.events.allEvents(
       (error,res)=>{
+        let events = JSON.parse(localStorage.getItem("events"));
         if(error){
+          events.push(error);
           this.setState({error, activealert:true, logs:[...this.state.logs,error]});
         }else{
+          events.push(res);
           this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
         }
+        localStorage.setItem("events",JSON.stringify(events));
       }
     )
   }

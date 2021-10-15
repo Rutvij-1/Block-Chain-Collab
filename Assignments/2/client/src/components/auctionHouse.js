@@ -419,7 +419,7 @@ class AuctionHouse extends Component {
                         <></>
                         :
                         // Auctions
-                        (status === 'Active') ?
+                        (status === 'Active' || status === 'Bidding Over') ?
                         <Button variant="outline-success" disabled>Active</Button>
                         :
                         (status === 'Reveal Over') ?
