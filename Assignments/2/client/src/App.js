@@ -60,7 +60,7 @@ class App extends Component {
 
       // Use web3 to get the user's accounts.
       const accounts = await web3.eth.getAccounts();
-      console.log(accounts);
+      // console.log(accounts);
       // Get the contract instances.
       const networkId = await web3.eth.net.getId();
 
@@ -91,7 +91,7 @@ class App extends Component {
         deployedNetwork4 && deployedNetwork4.address,
       );
       instance4.options.address = deployedNetwork4.address
-      console.log(accounts, deployedNetwork1.address, deployedNetwork2.address, deployedNetwork3.address,deployedNetwork4.address);
+      // console.log(accounts, deployedNetwork1.address, deployedNetwork2.address, deployedNetwork3.address,deployedNetwork4.address);
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
       this.setState({
@@ -146,7 +146,7 @@ class App extends Component {
     )
     blind.events.allEvents(
       (error,res)=>{
-        console.log(res, error, this.state.logs);
+        // console.log(res, error, this.state.logs);
         if(error){
           console.log(error.reason);
           localStorage.setItem("event",error);
@@ -233,7 +233,6 @@ class App extends Component {
         </div>;
     }
     // console.log(this.state.error, this.state.eventsuccess);
-    console.log(this.state.logs);
     return (
 <div className="App">
       <Router basename="/">

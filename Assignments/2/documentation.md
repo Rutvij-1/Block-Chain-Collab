@@ -108,8 +108,6 @@ At this point the Contract deposits 3 times the winning bid (the initial deposit
 - The UI has been divided into 4 main parts:
     - Auctions: Fetches all active auction/market listings
     - Create Auction: Enables the user account to add their own item as listing/auction in the market
-    - MyAuctions: Enables the user
-    - Checking whether the buyer/seller are eligible to execute a particular method
-    - Checking the sufficient balance of an account before transaction
-    - Checking if the string of the item has length less than or equal to 50.
-    - Checking if the string of the item has length less than or equal to 50.
+    - MyAuctions: Enables the user to check on their created auctions and current status
+    - MyBids: Enables the user to place bids/request to buy items that are active and check on their status after being sold.
+
