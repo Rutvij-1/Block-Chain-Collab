@@ -461,10 +461,10 @@ contract AveragePriceAuction {
     )
         external
         payable
-        validAuctionId(auction_id)
         onlyAfter(Auctions[auction_id].biddingEnd)
         onlyBefore(Auctions[auction_id].revealEnd)
         alreadyBidder(auction_id)
+        validAuctionId(auction_id)
     {
         uint256 refund = 0;
         bool success = false;
@@ -477,6 +477,9 @@ contract AveragePriceAuction {
             // Do not refund deposit.
             emit BidRevealFailed(auction_id, msg.sender);
         } else {
+            // Make it impossible for the sender to re-claim
+            bidToCheck.bidHash = bytes32(0);
+
             Auctions[auction_id].revealedBidders.push(msg.sender);
             Auctions[auction_id].revealed[msg.sender] = true;
             refund += bidToCheck.deposit;
@@ -485,13 +488,10 @@ contract AveragePriceAuction {
                     refund -= 2 * value;
                 emit BidRevealed(auction_id, msg.sender);
             } else emit DepositNotEnough(auction_id, msg.sender);
+            // the same deposit.
+            emit BalanceRefunded(auction_id, msg.sender, refund);
+            msg.sender.transfer(refund);
         }
-        // Make it impossible for the sender to re-claim
-        // the same deposit.
-        bidToCheck.bidHash = bytes32(0);
-        emit BalanceRefunded(auction_id, msg.sender, refund);
-        msg.sender.transfer(refund);
-        //emit BidRevealed(auction_id,msg.sender,success);
     }
 
     // This is an "internal" function which means that it

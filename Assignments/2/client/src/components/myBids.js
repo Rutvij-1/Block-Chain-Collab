@@ -325,8 +325,8 @@ class MyBids extends Component {
                     <td>{listing.item_name}</td>
                     <td>{listing.item_description}</td>
                     <td>{listing.type != "Normal Listing" ? "NA" : listing.price}</td>
-                    <td>{listing.type != "Normal Listing" ? listing.bidding_deadline.toTimeString() : listing.bidding_deadline}</td>
-                    <td>{listing.type != "Normal Listing" ? listing.reveal_deadline.toTimeString() : listing.reveal_deadline}</td>
+                    <td>{listing.type != "Normal Listing" ? listing.bidding_deadline.toString() : listing.bidding_deadline}</td>
+                    <td>{listing.type != "Normal Listing" ? listing.reveal_deadline.toString() : listing.reveal_deadline}</td>
                     <td>
                       {listing.type === "Normal Listing" ?
                         // Market
@@ -350,7 +350,7 @@ class MyBids extends Component {
                                     <InputGroup>
                                       <input type="password" className="form-control" id="pvtkey" required onChange={this.handleChange} placeholder="Private Key" />
                                     </InputGroup>
-                                    <Button variant="primary" onClick={this.verify(listing.auction_id, listing.type)}>Decrypt Item String</Button>
+                                    <Button variant="warning" onClick={this.verify(listing.auction_id, listing.type)}>Decrypt Item String</Button>
                                   </>
                                 }
                               </>
@@ -436,7 +436,7 @@ class MyBids extends Component {
                                             <InputGroup>
                                               <input type="password" className="form-control" id="pvtkey" required onChange={this.handleChange} placeholder="Private Key" />
                                             </InputGroup>
-                                            <Button variant="primary" onClick={this.verify(listing.auction_id, listing.type)}>Decrypt Item String</Button>
+                                            <Button variant="warning" onClick={this.verify(listing.auction_id, listing.type)}>Decrypt Item String</Button>
                                           </>
                                         }
                                       </>

@@ -239,8 +239,8 @@ class MyAuctions extends Component {
                     <td>{listing.item_name}</td>
                     <td>{listing.item_description}</td>
                     <td>{listing.type != "Normal Listing" ? "NA" : listing.price}</td>
-                    <td>{listing.type != "Normal Listing" ? listing.bidding_deadline.toTimeString() : listing.bidding_deadline}</td>
-                    <td>{listing.type != "Normal Listing" ? listing.reveal_deadline.toTimeString() : listing.reveal_deadline}</td>
+                    <td>{listing.type != "Normal Listing" ? listing.bidding_deadline.toString() : listing.bidding_deadline}</td>
+                    <td>{listing.type != "Normal Listing" ? listing.reveal_deadline.toString() : listing.reveal_deadline}</td>
                     <td>
                       {listing.type === "Normal Listing" ?
                         (status === 'Active') ?

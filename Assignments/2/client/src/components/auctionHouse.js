@@ -397,8 +397,8 @@ class AuctionHouse extends Component {
                     <td>{listing.item_name}</td>
                     <td>{listing.item_description}</td>
                     <td>{listing.type != "Normal Listing" ? "NA" : listing.price}</td>
-                    <td>{listing.type != "Normal Listing" ? listing.bidding_deadline.toTimeString() : listing.bidding_deadline}</td>
-                    <td>{listing.type != "Normal Listing" ? listing.reveal_deadline.toTimeString() : listing.reveal_deadline}</td>
+                    <td>{listing.type != "Normal Listing" ? listing.bidding_deadline.toString() : listing.bidding_deadline}</td>
+                    <td>{listing.type != "Normal Listing" ? listing.reveal_deadline.toString() : listing.reveal_deadline}</td>
                     <td>
                       {listing.beneficiary === this.state.currentAccount ?
                         // Seller
@@ -455,7 +455,13 @@ class AuctionHouse extends Component {
                             :
                             // Requested to Buy
                             (status === 'Requested') ?
-                              <Button variant="info" disabled>Requested to Buy</Button>
+                              <>
+                                {listing.buyer === this.state.currentAccount ?
+                                  <Button variant="info" disabled>Requested to Buy</Button>
+                                  :
+                                  <Button variant="outline-danger" disabled>Buyer has been Alloted</Button>
+                                }
+                              </>
                               :
                               // Sold by owner
                               (status === 'Sold') ?
@@ -470,7 +476,7 @@ class AuctionHouse extends Component {
                                       <InputGroup>
                                         <input type="password" className="form-control" id="pvtkey" required onChange={this.handleChange} placeholder="Private Key" />
                                       </InputGroup>
-                                      <Button variant="primary" onClick={this.verify(listing.auction_id, listing.type)}>Decrypt Item String</Button>
+                                      <Button variant="warning" onClick={this.verify(listing.auction_id, listing.type)}>Decrypt Item String</Button>
                                     </>
                                   }
                                 </>
