@@ -6,7 +6,7 @@ class MyAuctions extends Component {
   constructor(props) {
     super(props)
     this.state = {
-			web3: null,
+      web3: null,
       accounts: null,
       currentAccount: null,
       market: null,
@@ -20,7 +20,7 @@ class MyAuctions extends Component {
     this.handleChange = this.handleChange.bind(this);
     this.endAuction = this.endAuction.bind(this);
     this.sellItem = this.sellItem.bind(this);
-		
+
   }
   componentDidMount = async () => {
     try {
@@ -30,12 +30,12 @@ class MyAuctions extends Component {
         average_contract: this.props.average_contract,
         web3: this.props.web3,
         currentAccount: this.props.account,
-				market: this.props.market
+        market: this.props.market
       });
       let mylist = []
       let offSet = 1000;
 
-			let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
+      let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
       for (let i = 0; i < marketListings.length; ++i) {
         if (marketListings[i]["beneficiary"] == this.props.account) {
           marketListings[i]["type"] = "Normal Listing";
@@ -84,76 +84,76 @@ class MyAuctions extends Component {
 
     } catch (error) {
       alert(`Loading error...`);
-		}
+    }
   };
-  
+
   handleChange(e) {
     e.preventDefault();
     const formData = Object.assign({}, this.state.formData);
     formData[e.target.id] = e.target.value;
     this.setState({ formData: formData });
   };
-  
-	sellItem = (auction_id, type) => async (e) => {
+
+  sellItem = (auction_id, type) => async (e) => {
     try {
       if (type === "Normal Listing") {
         let marketListings = await this.state.market.methods.fetchalllistings().call({ from: this.state.currentAccount });
         let pubkey = marketListings[auction_id].pubkey;
         let secret = await get_secret(pubkey, this.state.formData.unique_string);
-        let value = (marketListings[auction_id].price*2);
-        await this.state.market.methods.sellItem(auction_id,secret)
-        .send({
-          from: this.state.currentAccount,
-          value
-        });
+        let value = (marketListings[auction_id].price * 2);
+        await this.state.market.methods.sellItem(auction_id, secret)
+          .send({
+            from: this.state.currentAccount,
+            value
+          });
       }
       else if (type === "Blind Auction") {
         let marketListings = await this.state.blind_contract.methods.getallauctions().call({ from: this.state.currentAccount });
         let pubkey = marketListings[auction_id].pubkey;
         let secret = await get_secret(pubkey, this.state.formData.unique_string);
-        let value = (marketListings[auction_id].finalBid*2);
-        await this.state.blind_contract.methods.sellItem(auction_id,secret)
-        .send({
-          from: this.state.currentAccount,
-          value
-        });
-        
+        let value = (marketListings[auction_id].finalBid * 2);
+        await this.state.blind_contract.methods.sellItem(auction_id, secret)
+          .send({
+            from: this.state.currentAccount,
+            value
+          });
+
       } else if (type === "Vikrey Auction") {
         let marketListings = await this.state.vickrey_contract.methods.getallauctions().call({ from: this.state.currentAccount });
         let pubkey = marketListings[auction_id].pubkey;
         let secret = await get_secret(pubkey, this.state.formData.unique_string);
-        let value = (marketListings[auction_id].finalBid*2);
-        await this.state.vickrey_contract.methods.sellItem(auction_id,secret)
-        .send({
-          from: this.state.currentAccount,
-          value
-        });
-       
+        let value = (marketListings[auction_id].finalBid * 2);
+        await this.state.vickrey_contract.methods.sellItem(auction_id, secret)
+          .send({
+            from: this.state.currentAccount,
+            value
+          });
+
       } else {
         let marketListings = await this.state.average_contract.methods.getallauctions().call({ from: this.state.currentAccount });
         let pubkey = marketListings[auction_id].pubkey;
         let secr = await get_secret(pubkey, this.state.formData.unique_string);
-        let value = (marketListings[auction_id].finalBid*2);
-        await this.state.average_contract.methods.sellItem(auction_id,secr)
-        .send({
-          from: this.state.currentAccount,
-          value
-        });
-        
+        let value = (marketListings[auction_id].finalBid * 2);
+        await this.state.average_contract.methods.sellItem(auction_id, secr)
+          .send({
+            from: this.state.currentAccount,
+            value
+          });
+
       }
     } catch (error) {
-			alert(`Sell Item Error: ${error}`);
+      alert(`Sell Item Error: ${error}`);
     }
-	};
+  };
 
   endAuction = (auction_id, type) => async (e) => {
     e.preventDefault();
     const { market, blind_contract, vickrey_contract, average_contract } = this.state;
     try {
-			if (type === "Normal Listing") {
+      if (type === "Normal Listing") {
         await market.methods.sellItem(
           parseInt(auction_id),
-					this.state.formData.unique_string
+          this.state.formData.unique_string
         ).send({
           from: this.state.currentAccount
         });
@@ -178,7 +178,7 @@ class MyAuctions extends Component {
         });
       }
     } catch (error) {
-			alert(`End Auction Error: ${error.message}`);
+      alert(`End Auction Error: ${error.message}`);
     }
   };
 
@@ -238,61 +238,65 @@ class MyAuctions extends Component {
                     <td>{listing.type}</td>
                     <td>{listing.item_name}</td>
                     <td>{listing.item_description}</td>
-                    <td>{listing.type!="Normal Listing" ? "NA": listing.price}</td>
-                    <td>{listing.type!="Normal Listing" ? listing.bidding_deadline.toTimeString(): listing.bidding_deadline}</td>
-                    <td>{listing.type!="Normal Listing" ? listing.reveal_deadline.toTimeString(): listing.reveal_deadline}</td>
+                    <td>{listing.type != "Normal Listing" ? "NA" : listing.price}</td>
+                    <td>{listing.type != "Normal Listing" ? listing.bidding_deadline.toTimeString() : listing.bidding_deadline}</td>
+                    <td>{listing.type != "Normal Listing" ? listing.reveal_deadline.toTimeString() : listing.reveal_deadline}</td>
                     <td>
-											{ listing.type === "Normal Listing" ?
-												(status === 'Active')?
-                        <Button variant="outline-success" disabled>Active</Button>
-                        :
-												(status === 'Requested')?
-                        <>
-                        <p>Item requested. <br/> Buyer: {listing.buyer? listing.buyer: "None"} <br/> Selling Price: {listing.price}</p>
-                        <input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
-                        <Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
-                        </>
-                        :
-												(status === 'Sold')?
-                        <>
-                        <Button variant="outline-info" disabled>Out for Delivery</Button>
-                        <p><br/> Buyer: {listing.buyer? listing.buyer: "None"} <br/> Selling Price: {listing.price}</p>
-                        </>
-												:
-                        (status === 'Done')?
-                        <>
-                        <Button variant="outline-success" disabled>Delivered</Button>
-                        <p><br/> Buyer: {listing.buyer? listing.buyer: "None"} <br/> Selling Price: {listing.price}</p>
-                        </>
-                        :
-                        <></>
+                      {listing.type === "Normal Listing" ?
+                        (status === 'Active') ?
+                          <Button variant="outline-success" disabled>Active</Button>
+                          :
+                          (status === 'Requested') ?
+                            <>
+                              <p>Item requested. <br /> Buyer: {listing.buyer ? listing.buyer : "None"} <br /> Selling Price: {listing.price}</p>
+                              <input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
+                              <Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
+                            </>
+                            :
+                            (status === 'Sold') ?
+                              <>
+                                <Button variant="outline-info" disabled>Out for Delivery</Button>
+                                <p><br /> Buyer: {listing.buyer ? listing.buyer : "None"} <br /> Selling Price: {listing.price}</p>
+                              </>
+                              :
+                              (status === 'Done') ?
+                                <>
+                                  <Button variant="outline-success" disabled>Delivered</Button>
+                                  <p><br /> Buyer: {listing.buyer ? listing.buyer : "None"} <br /> Selling Price: {listing.price}</p>
+                                </>
+                                :
+                                <></>
                         :
                         // Auctions
                         (status === 'Active') ?
-                        <Button variant="outline-success" disabled>Active</Button>
-                        :
-                        (status === 'Reveal Over') ?
-                        <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
-                        :
-												(status === 'Ended')?
-                        <>
-                        <p>Auction Ended Successfully. <br/> Winner: {listing.winner? listing.winner: "None"} <br/> Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</p>
-                        <input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
-                        <Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
-                        </>
-                        :
-                        (status === 'Sold')?
-                        <>
-                        <Button variant="outline-info" disabled>Out for Delivery</Button>
-                        </>
-												:
-                        (status === 'Done')?
-                        <>
-                        <Button variant="outline-success" disabled>Delivered</Button>
-                        </>
-                        :
-                        <></>
-												}
+                          <Button variant="outline-success" disabled>Active</Button>
+                          :
+                          (status === 'Reveal Over') ?
+                            <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
+                            :
+                            (status === 'Ended') ?
+                              <>
+                                <p>Auction Ended Successfully. <br /> Winner: {listing.finalBid > 0 ? listing.winner : "None"} <br /> Winning Bid: {listing.finalBid > 0 ? listing.finalBid : "NA"}</p>
+                                {listing.finalBid > 0 &&
+                                  <>
+                                    <input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
+                                    <Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
+                                  </>
+                                }
+                              </>
+                              :
+                              (status === 'Sold') ?
+                                <>
+                                  <Button variant="outline-info" disabled>Out for Delivery</Button>
+                                </>
+                                :
+                                (status === 'Done') ?
+                                  <>
+                                    <Button variant="outline-success" disabled>Delivered</Button>
+                                  </>
+                                  :
+                                  <></>
+                      }
                     </td>
                   </tr>
                 )

@@ -341,7 +341,10 @@ class MyBids extends Component {
                             (status === 'Sold') ?
                               <>
                                 {this.state.decrypted ?
-                                  <p>Decrypted string: {this.state.decrypted}</p>
+                                  <>
+                                    <p>Decrypted string: {this.state.decrypted}</p>
+                                    <Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
+                                  </>
                                   :
                                   <>
                                     <InputGroup>
@@ -350,7 +353,6 @@ class MyBids extends Component {
                                     <Button variant="primary" onClick={this.verify(listing.auction_id, listing.type)}>Decrypt Item String</Button>
                                   </>
                                 }
-                                <Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
                               </>
                               :
                               // Delivered
@@ -425,7 +427,10 @@ class MyBids extends Component {
                                           Bid Price: {listing.finalBid > 0 ? listing.finalBid : "NA"} </Button>
                                         <br />
                                         {this.state.decrypted ?
-                                          <p>Decrypted string: {this.state.decrypted}</p>
+                                          <>
+                                            <p>Decrypted string: {this.state.decrypted}</p>
+                                            <Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
+                                          </>
                                           :
                                           <>
                                             <InputGroup>
@@ -434,7 +439,6 @@ class MyBids extends Component {
                                             <Button variant="primary" onClick={this.verify(listing.auction_id, listing.type)}>Decrypt Item String</Button>
                                           </>
                                         }
-                                        <Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
                                       </>
                                       :
                                       <Button variant="info" disabled>Auction Ended. <br />
