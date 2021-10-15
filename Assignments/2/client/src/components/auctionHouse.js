@@ -22,7 +22,6 @@ class AuctionHouse extends Component {
     this.makeBid = this.makeBid.bind(this);
     this.endAuction = this.endAuction.bind(this);
     this.sellItem = this.sellItem.bind(this);
-    this.verify = this.verify.bind(this);
     this.confirm = this.confirm.bind(this);
     this.revealBid = this.revealBid.bind(this);
   }
@@ -78,64 +77,66 @@ class AuctionHouse extends Component {
     }
   };
 
-  verify = (auction_id, type) => async (e) => {
-    e.preventDefault();
-    const { market, blind_contract, vickrey_contract, average_contract, currentAccount } = this.state
-    try {
-      if (type === "Normal Listing") {
-        let marketListings = await market.methods.fetchalllistings().call({ from: currentAccount });
-        let key = marketListings[auction_id].H;
-        let cipher = EthCrypto.cipher.parse(key);
-        //decrypt using the private key offchain
-        let buyer_private_key = this.state.formData.pvtkey;
-        let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
-        this.setState({ decrypted });
-      } else if (type === "Blind Auction") {
-        let marketListings = await blind_contract.methods.getallauctions().call({ from: currentAccount });
-        let key = marketListings[auction_id].H;
-        let cipher = EthCrypto.cipher.parse(key);
-        //decrypt using the private key offchain
-        let buyer_private_key = this.state.formData.pvtkey;
-        let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
-        this.setState({ decrypted });
-      } else if (type === "Vikrey Auction") {
-        let marketListings = await vickrey_contract.methods.getallauctions().call({ from: currentAccount });
-        let key = marketListings[auction_id].H;
-        let cipher = EthCrypto.cipher.parse(key);
-        //decrypt using the private key offchain
-        let buyer_private_key = this.state.formData.pvtkey;
-        let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
-        this.setState({ decrypted });
-      } else {
-        let marketListings = await average_contract.methods.getallauctions().call({ from: currentAccount });
-        let key = marketListings[auction_id].H;
-        let cipher = EthCrypto.cipher.parse(key);
-        //decrypt using the private key offchain
-        let buyer_private_key = this.state.formData.pvtkey;
-        let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
-        this.setState({ decrypted });
-      }
-    } catch (err) {
-      console.log(err);
-      alert(`Error in decrypting key`);
-    }
-  };
-
   confirm = (auction_id, type) => async (e) => {
     e.preventDefault();
     const { market, blind_contract, vickrey_contract, average_contract, currentAccount } = this.state
     try {
       if (type === "Normal Listing") {
+        let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
+        let key = marketListings[auction_id].H;
+        let cipher = EthCrypto.cipher.parse(key);
+        //decrypt using the private key offchain
+        let buyer_private_key = this.state.formData.pvtkey;
+        try {
+          let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          this.setState({ decrypted });
+        } catch (err) {
+          alert(`Error in decrypting key`);
+        }
         await market.methods.confirmDelivery(auction_id).send({ from: currentAccount });
-      } else if (type === "Blind Auction") {
+      }
+      else if (type === "Blind Auction") {
+        let marketListings = await this.props.blind_contract.methods.getallauctions().call({ from: this.props.account });
+        let key = marketListings[auction_id].H;
+        let cipher = EthCrypto.cipher.parse(key);
+        //decrypt using the private key offchain
+        let buyer_private_key = this.state.formData.pvtkey;
+        try {
+          let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          this.setState({ decrypted });
+        } catch (err) {
+          alert(`Error in decrypting key`);
+        }
         await blind_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
       } else if (type === "Vikrey Auction") {
+        let marketListings = await this.props.vickrey_contract.methods.getallauctions().call({ from: this.props.account });
+        let key = marketListings[auction_id].H;
+        let cipher = EthCrypto.cipher.parse(key);
+        //decrypt using the private key offchain
+        let buyer_private_key = this.state.formData.pvtkey;
+        try {
+          let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          this.setState({ decrypted });
+        } catch (err) {
+          alert(`Error in decrypting key`);
+        }
         await vickrey_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
       } else {
+        let marketListings = await this.props.average_contract.methods.getallauctions().call({ from: this.props.account });
+        let key = marketListings[auction_id].H;
+        let cipher = EthCrypto.cipher.parse(key);
+        //decrypt using the private key offchain
+        let buyer_private_key = this.state.formData.pvtkey;
+        try {
+          let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          this.setState({ decrypted });
+        } catch (err) {
+          alert(`Error in decrypting key`);
+        }
         await average_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
       }
     } catch (error) {
-      alert(`Error! Could not confirm: ${error}`);
+      alert(`Error! Could not confirm.`);
     }
   };
 

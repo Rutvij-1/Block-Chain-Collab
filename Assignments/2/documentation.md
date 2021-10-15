@@ -104,6 +104,7 @@ The seller makes note of the above event and sends hash of the item it wants to 
 At this point the Contract deposits 3 times the winning bid (the initial deposit + selling price) to the seller and the amount equivalent to the winning bid to the buyer(refund for the deposit) and this concludes the auction. 
 
 
+
 #### UI Design
 - The UI has been divided into 4 main parts:
     - Auctions: Fetches all active auction/market listings
@@ -111,3 +112,22 @@ At this point the Contract deposits 3 times the winning bid (the initial deposit
     - MyAuctions: Enables the user to check on their created auctions and current status
     - MyBids: Enables the user to place bids/request to buy items that are active and check on their status after being sold.
 
+
+#### Installation
+to install eth-crypto a webjs library to deal with encryption and decryption issues 
+    ```
+    npm install eth-crypto --save 
+    ```
+#### Running the backend
+
+```
+truffle console 
+```
+```
+compile
+``` 
+```
+migrate 
+```
+
+After that you can use the commands shown in the test files to play around .
