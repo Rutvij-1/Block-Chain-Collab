@@ -153,7 +153,6 @@ class App extends Component {
     )
     blind.events.allEvents(
       (error,res)=>{
-        // console.log(res, error, this.state.logs);
         let events = JSON.parse(localStorage.getItem("events"));
         if(error){
           console.log(error.reason);

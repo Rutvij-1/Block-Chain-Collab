@@ -111,7 +111,7 @@ At this point the Contract deposits 3 times the winning bid (the initial deposit
     - Create Auction: Enables the user account to add their own item as listing/auction in the market
     - MyAuctions: Enables the user to check on their created auctions and current status
     - MyBids: Enables the user to place bids/request to buy items that are active and check on their status after being sold.
-    - MyBids: Enables the user to place bids/request to buy items that are active and check on their status after being sold.
+    - Events Log: Shows the logs of all the events occurred in the blockchain.
 
 
 #### Installation
