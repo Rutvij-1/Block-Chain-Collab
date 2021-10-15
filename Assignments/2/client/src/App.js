@@ -91,7 +91,7 @@ class App extends Component {
         deployedNetwork4 && deployedNetwork4.address,
       );
       instance4.options.address = deployedNetwork4.address
-      // console.log(accounts, deployedNetwork1.address, deployedNetwork2.address, deployedNetwork3.address,deployedNetwork4.address);
+      console.log(accounts, deployedNetwork1.address, deployedNetwork2.address, deployedNetwork3.address,deployedNetwork4.address);
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
       this.setState({
@@ -191,7 +191,7 @@ class App extends Component {
 
   set_string(key) {
     this.setState({
-      stringvalue: key
+      stringvalue: key,
     });
   };
 
@@ -258,7 +258,7 @@ class App extends Component {
         :
         <></>
         }
-        <Route exact path="/home" render={(props) => (
+        <Route exact path="/" render={(props) => (
            <Dashboard web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market}/>
           )}/>
           <Route exact path="/auctionhouse" render={(props) => (

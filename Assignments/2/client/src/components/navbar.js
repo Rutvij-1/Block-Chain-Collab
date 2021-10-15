@@ -12,7 +12,7 @@ class Navbr extends Component{
     <>
       <Navbar bg="dark" variant="dark" sticky="top">
       <Container>
-        <Link to="/home">
+        <Link to="/">
           <Navbar.Brand>Tripple Auction
           </Navbar.Brand>
         </Link>
