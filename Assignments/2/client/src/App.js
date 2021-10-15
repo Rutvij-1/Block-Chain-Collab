@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import {Spinner, Alert } from "react-bootstrap";
+import { Spinner, Alert } from "react-bootstrap";
 import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 import "./App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -38,7 +38,7 @@ class App extends Component {
       formData: {},
       error: null,
       eventsuccess: [],
-      eventfails:["ItemUnsold","DepositNotEnough","BidRevealFailed","Aborted"],
+      eventfails: ["ItemUnsold", "DepositNotEnough", "BidRevealFailed", "Aborted"],
       activealert: false,
       logs: []
     };
@@ -123,11 +123,11 @@ class App extends Component {
     this.eventcheck(market, blind_contract, vickrey_contract, average_contract);
     console.log(response);
   };
- 
-  setShow(e){
+
+  setShow(e) {
     this.setState({
       error: null,
-      eventsuccess:[],
+      eventsuccess: [],
       activealert: false
     })
     window.location.reload(false);
@@ -135,60 +135,69 @@ class App extends Component {
 
   eventcheck(market, blind, vikrey, average) {
     market.events.allEvents(
-      (error,res)=>{
+      (error, res) => {
         let events = JSON.parse(localStorage.getItem("events"));
-        if(!events){
-          events=[]
+        if (!events) {
+          events = []
         }
-        if(error){
+        if (error) {
           events.push(error);
           console.log(error.reason);
-          this.setState({error:error.reason, activealert:true, logs:[...this.state.logs,error]});
-        }else{
+          this.setState({ error: error.reason, activealert: true, logs: [...this.state.logs, error] });
+        } else {
           events.push(res);
-          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
+          this.setState({ eventsuccess: [...this.state.eventsuccess, res.event], activealert: true, logs: [...this.state.logs, res] });
         }
-        localStorage.setItem("events",JSON.stringify(events));
+        localStorage.setItem("events", JSON.stringify(events));
       }
     )
     blind.events.allEvents(
-      (error,res)=>{
+      (error, res) => {
         let events = JSON.parse(localStorage.getItem("events"));
-        if(error){
+        if (!events) {
+          events = []
+        }
+        if (error) {
           console.log(error.reason);
           events.push(error);
-          this.setState({error:error.reason, activealert:true, logs:[...this.state.logs,error]});
-        }else{
+          this.setState({ error: error.reason, activealert: true, logs: [...this.state.logs, error] });
+        } else {
           events.push(res);
-          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
+          this.setState({ eventsuccess: [...this.state.eventsuccess, res.event], activealert: true, logs: [...this.state.logs, res] });
         }
-        localStorage.setItem("events",JSON.stringify(events));
+        localStorage.setItem("events", JSON.stringify(events));
       }
     )
     vikrey.events.allEvents(
-      (error,res)=>{
+      (error, res) => {
         let events = JSON.parse(localStorage.getItem("events"));
-        if(error){
-          events.push(error);
-          this.setState({error, activealert:true, logs:[...this.state.logs,error]});
-        }else{
-          events.push(res);
-          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true});
+        if (!events) {
+          events = []
         }
-        localStorage.setItem("events",JSON.stringify(events));
+        if (error) {
+          events.push(error);
+          this.setState({ error, activealert: true, logs: [...this.state.logs, error] });
+        } else {
+          events.push(res);
+          this.setState({ eventsuccess: [...this.state.eventsuccess, res.event], activealert: true });
+        }
+        localStorage.setItem("events", JSON.stringify(events));
       }
     )
     average.events.allEvents(
-      (error,res)=>{
+      (error, res) => {
         let events = JSON.parse(localStorage.getItem("events"));
-        if(error){
-          events.push(error);
-          this.setState({error, activealert:true, logs:[...this.state.logs,error]});
-        }else{
-          events.push(res);
-          this.setState({eventsuccess: [...this.state.eventsuccess,res.event], activealert:true, logs:[...this.state.logs,res]});
+        if (!events) {
+          events = []
         }
-        localStorage.setItem("events",JSON.stringify(events));
+        if (error) {
+          events.push(error);
+          this.setState({ error, activealert: true, logs: [...this.state.logs, error] });
+        } else {
+          events.push(res);
+          this.setState({ eventsuccess: [...this.state.eventsuccess, res.event], activealert: true, logs: [...this.state.logs, res] });
+        }
+        localStorage.setItem("events", JSON.stringify(events));
       }
     )
   }
@@ -196,12 +205,12 @@ class App extends Component {
   activeListings = async () => {
     const { accounts, vickrey_contract, blind_contract, average_contract, showlistings } = this.state;
     console.log(accounts);
-    this.setState({ 
+    this.setState({
       showlistings: !showlistings,
       showcreate: false,
       showbids: false,
       showauctions: false
-     });
+    });
   };
 
   set_string(key) {
@@ -212,7 +221,7 @@ class App extends Component {
 
   showcreate(e) {
     e.preventDefault();
-    this.setState({ 
+    this.setState({
       showlistings: false,
       showcreate: !this.state.showcreate,
       showbids: false,
@@ -222,7 +231,7 @@ class App extends Component {
 
   showbids(e) {
     e.preventDefault();
-    this.setState({ 
+    this.setState({
       showlistings: false,
       showcreate: false,
       showbids: !this.state.showbids,
@@ -232,7 +241,7 @@ class App extends Component {
 
   showauctions(e) {
     e.preventDefault();
-    this.setState({ 
+    this.setState({
       showlistings: false,
       showcreate: false,
       showbids: false,
@@ -243,55 +252,55 @@ class App extends Component {
   render() {
     if (!this.state.web3) {
 
-      return <div className="spinner" style={{marginLeft:10, marginTop:10}}><Spinner animation="border" />
-      <br/>
-        </div>;
+      return <div className="spinner" style={{ marginLeft: 10, marginTop: 10 }}><Spinner animation="border" />
+        <br />
+      </div>;
     }
     // console.log(this.state.error, this.state.eventsuccess);
     return (
-<div className="App">
-      <Router basename="/">
-        <Navbr/>
-        <Alert stack={{limit: 10, spacing: 20}} />
-        { this.state.error ?
-        <Alert variant="danger" onClose={()=>this.setShow()} dismissible >{this.state.error}</Alert>
-        : this.state.eventsuccess ?
-        <>
-        {this.state.eventsuccess.map(event=>{
-          return(
-            <>
-            {this.state.eventfails.includes(event)?
-            <Alert variant="danger" onClose={this.setShow} dismissible >{event}</Alert>
-            :
-            <Alert variant="success" onClose={this.setShow} dismissible >{event}</Alert>
-            }
-            </>
-          )
-        })}
-        </>
-        :
-        <></>
-        }
-        <Route exact path="/" render={(props) => (
-           <Dashboard web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market}/>
-          )}/>
+      <div className="App">
+        <Router basename="/">
+          <Navbr />
+          <Alert stack={{ limit: 10, spacing: 20 }} />
+          {this.state.error ?
+            <Alert variant="danger" onClose={() => this.setShow()} dismissible >{this.state.error}</Alert>
+            : this.state.eventsuccess ?
+              <>
+                {this.state.eventsuccess.map(event => {
+                  return (
+                    <>
+                      {this.state.eventfails.includes(event) ?
+                        <Alert variant="danger" onClose={this.setShow} dismissible >{event}</Alert>
+                        :
+                        <Alert variant="success" onClose={this.setShow} dismissible >{event}</Alert>
+                      }
+                    </>
+                  )
+                })}
+              </>
+              :
+              <></>
+          }
+          <Route exact path="/" render={(props) => (
+            <Dashboard web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} />
+          )} />
           <Route exact path="/auctionhouse" render={(props) => (
-           <AuctionHouse web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market}  set_string={this.set_string} stringvalue={this.state.stringvalue}/>
-          )}/>
+            <AuctionHouse web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} set_string={this.set_string} stringvalue={this.state.stringvalue} />
+          )} />
           <Route path="/create" exact render={(props) => (
-             <CreateAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} />
-            )}/>
+            <CreateAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} />
+          )} />
           <Route path="/myauctions" exact render={(props) => (
-           <MyAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} set_string={this.set_string}/>
-          )}/>
+            <MyAuctions web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} set_string={this.set_string} />
+          )} />
           <Route path="/mybids" exact render={(props) => (
-           <MyBids web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} stringvalue={this.state.stringvalue}/>
-          )}/>
+            <MyBids web3={this.state.web3} account={this.state.currentAccount} vickrey_contract={this.state.vickrey_contract} blind_contract={this.state.blind_contract} average_contract={this.state.average_contract} market={this.state.market} stringvalue={this.state.stringvalue} />
+          )} />
           <Route path="/events" exact render={(props) => (
-           <AllEvents logs={this.state.logs}/>
-          )}/>
-      </Router>
-        </div>
+            <AllEvents logs={this.state.logs} />
+          )} />
+        </Router>
+      </div>
     );
   }
 }
