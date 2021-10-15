@@ -172,7 +172,13 @@ class MyBids extends Component {
     const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
     this.setState({ makebid: !this.state.makebid });
     try {
-      if (type === "Blind Auction") {
+      if (type === "Normal Listing") {
+        await this.state.market.methods.requestBuy(auction_id,publickey)
+        .send({ 
+          from: currentAccount,
+          value: deposit
+        });
+      } else if (type === "Blind Auction") {
         await blind_contract.methods.bid(
           web3.utils.keccak256(
             web3.eth.abi.encodeParameters(
@@ -330,7 +336,7 @@ class MyBids extends Component {
                       { listing.type === "Normal Listing" ?
                       // Market
 											(status === 'Active') ?
-											<Button variant="primary" onClick={this.buyItem(listing.auction_id, listing.type)}>Buy Item</Button>
+											<Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Buy Item</Button>
 											:
                       // Requested to Buy
 											(status === 'Requested') ?

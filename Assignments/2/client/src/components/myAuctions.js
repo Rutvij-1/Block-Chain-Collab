@@ -97,10 +97,10 @@ class MyAuctions extends Component {
 	sellItem = (auction_id, type) => async (e) => {
     try {
       if (type === "Normal Listing") {
-        let marketListings = await this.state.market.methods.fetchalllistings().call({ from: tthis.state.currentAccount });
+        let marketListings = await this.state.market.methods.fetchalllistings().call({ from: this.state.currentAccount });
         let pubkey = marketListings[auction_id].pubkey;
         let secret = await get_secret(pubkey, this.state.formData.unique_string);
-        let value = (marketListings[auction_id].finalBid*2);
+        let value = (marketListings[auction_id].price*2);
         await this.state.market.methods.sellItem(auction_id,secret)
         .send({
           from: this.state.currentAccount,

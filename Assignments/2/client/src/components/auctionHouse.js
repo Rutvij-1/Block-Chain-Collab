@@ -23,7 +23,6 @@ class AuctionHouse extends Component {
     this.endAuction = this.endAuction.bind(this);
     this.sellItem = this.sellItem.bind(this);
 		this.confirm = this.confirm.bind(this);
-    this.buyItem = this.buyItem.bind(this);
     this.revealBid = this.revealBid.bind(this);
   }
   componentDidMount = async () => {
@@ -78,18 +77,7 @@ class AuctionHouse extends Component {
     }
   };
 
-	buyItem = (auction_id) => async (e) => {
-    e.preventDefault();
-		let pubkey = await getPublicKey(this.state.currentAccount);
-		try{
-			let res = await this.state.market.methods.requestBuy(auction_id,pubkey).send({ from: this.props.account });
-			window.location.reload(false);
-		} catch(error){
-			alert(`error`);
-		}
-	};
-
-	confirm = (auction_id, type) => async (e) => {
+  confirm = (auction_id, type) => async (e) => {
     e.preventDefault();
     const { market, blind_contract, vickrey_contract, average_contract, currentAccount } = this.state
 		try{
@@ -158,7 +146,13 @@ class AuctionHouse extends Component {
     const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
     this.setState({ makebid: !this.state.makebid });
     try {
-      if (type === "Blind Auction") {
+      if (type === "Normal Listing") {
+        await this.state.market.methods.requestBuy(auction_id,publickey)
+        .send({ 
+          from: currentAccount,
+          value: deposit
+        });
+      } else if (type === "Blind Auction") {
         await blind_contract.methods.bid(
           web3.utils.keccak256(
             web3.eth.abi.encodeParameters(
@@ -246,10 +240,10 @@ class AuctionHouse extends Component {
   sellItem = (auction_id, type) => async (e) => {
     try {
       if (type === "Normal Listing") {
-        let marketListings = await this.state.market.methods.fetchalllistings().call({ from: tthis.state.currentAccount });
+        let marketListings = await this.state.market.methods.fetchalllistings().call({ from: this.state.currentAccount });
         let pubkey = marketListings[auction_id].pubkey;
         let secret = await get_secret(pubkey, this.state.formData.unique_string);
-        let value = (marketListings[auction_id].finalBid*2);
+        let value = (marketListings[auction_id].price*2);
         await this.state.market.methods.sellItem(auction_id,secret)
         .send({
           from: this.state.currentAccount,
@@ -413,7 +407,7 @@ class AuctionHouse extends Component {
                         <>
                           <p>Item requested. <br/> Buyer: {listing.buyer? listing.buyer: "None"} <br/> Selling Price: {listing.price}</p>
                           <input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
-                          <Button variant="success" onClick={this.sellItem(listing.auction_id)}>Sell Item</Button>
+                          <Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
                         </>
                         :
                         (status === 'Sold')?
@@ -449,7 +443,17 @@ class AuctionHouse extends Component {
 												(type === "Normal")?
                           // Market
 													(status === 'Active') ?
-													<Button variant="primary" onClick={this.buyItem(listing.auction_id, listing.type)}>Buy Item</Button>
+                          <>
+                          <InputGroup>
+                              <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
+                              <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
+                            </InputGroup>
+                            <InputGroup>
+                              <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount (>2*Bid Amount)" />
+                              <input type="string" className="form-control" id="publickey" required onChange={this.handleChange} placeholder="Public Key" />
+                            </InputGroup>
+													<Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Buy Item</Button>
+                          </>
 													:
                           // Requested to Buy
 													(status === 'Requested') ?
