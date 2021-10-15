@@ -255,7 +255,7 @@ class App extends Component {
 <div className="App">
       <Router basename="/">
         <Navbr/>
-        <Alert stack={{limit: 10, spacing: 20}} onClose={this.setShow} />
+        <Alert stack={{limit: 10, spacing: 20}} onClose={this.setShow} offset={100}/>
         { this.state.error ?
             Alert.danger(`${this.state.error}`)
         : this.state.eventsuccess ?
