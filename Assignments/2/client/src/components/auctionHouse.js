@@ -513,7 +513,7 @@ class AuctionHouse extends Component {
                             </>
                             :
                             // Auction reveal deadline
-                            (status === 'Reveal Time Over') ?
+                            (status === 'Reveal Over') ?
                             <Button variant="danger" disabled>Reveal Time Over. <br />Wait for auction end.</Button>
                             :
                             // Auction ended
