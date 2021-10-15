@@ -103,6 +103,7 @@ contract AveragePriceAuction {
         uint256 biddingEnd;
         uint256 revealEnd;
         bool ended;
+        bool sold;
         string item_name;
         string item_description;
         bool bidplaced;
@@ -411,6 +412,7 @@ contract AveragePriceAuction {
                 currentauction.biddingEnd,
                 currentauction.revealEnd,
                 currentauction.ended,
+                currentauction.sold,
                 currentauction.item_name,
                 currentauction.item_description,
                 currentauction.bidded[msg.sender],

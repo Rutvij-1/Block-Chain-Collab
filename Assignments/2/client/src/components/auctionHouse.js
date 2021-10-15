@@ -16,13 +16,13 @@ class AuctionHouse extends Component {
       listings: [],
       makebid: false,
       formData: {},
+      decrypted: null
     }
     this.handleChange = this.handleChange.bind(this);
     this.makeBid = this.makeBid.bind(this);
     this.endAuction = this.endAuction.bind(this);
     this.sellItem = this.sellItem.bind(this);
 		this.confirm = this.confirm.bind(this);
-    this.buyItem = this.buyItem.bind(this);
     this.revealBid = this.revealBid.bind(this);
   }
   componentDidMount = async () => {
@@ -77,60 +77,82 @@ class AuctionHouse extends Component {
     }
   };
 
-	sellItem = (auction_id) => async (e) => {
+  confirm = (auction_id, type) => async (e) => {
     e.preventDefault();
-		const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-		let marketListings = await this.props.market.methods.fetchalllistings().call({ from: accounts[0] });
-		let pubkey = await getPublicKey(marketListings[auction_id].buyer);
-		let secr = await get_secret(pubkey, this.state.formData.unique_string);
-		let res = await this.state.market.methods.sellIstem(auction_id,secr).send({from: this.state.currentAccount});
-		let sent_string = await res.logs[0].args.H;
-		this.props.set_string(sent_string);
-		console.log(sent_string);
-	};
-
-	buyItem = (auction_id) => async (e) => {
-    e.preventDefault();
-		const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-		let pubkey = await getPublicKey(this.state.currentAccount);
+    const { market, blind_contract, vickrey_contract, average_contract, currentAccount } = this.state
 		try{
-			let res = await this.state.market.methods.requestBuy(auction_id,pubkey).send({ from: accounts[0] });
-			window.location.reload(false);
+      if (type === "Normal Listing") {
+        let marketListings = await this.props.market.methods.fetchalllistings().call({ from: this.props.account });
+        let key = marketListings[auction_id].H;
+        let cipher = EthCrypto.cipher.parse(key);
+        //decrypt using the private key offchain
+        let buyer_private_key = this.state.formData.pvtkey;
+        try{
+          let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          this.setState({ decrypted });
+        } catch(err){
+          alert(`Error in decrypting key`);
+        }
+        await market.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+      }
+      else if (type === "Blind Auction") {
+        let marketListings = await this.props.blind_contract.methods.getallauctions().call({ from: this.props.account });
+        let key = marketListings[auction_id].H;
+        let cipher = EthCrypto.cipher.parse(key);
+        //decrypt using the private key offchain
+        let buyer_private_key = this.state.formData.pvtkey;
+        try{
+          let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          this.setState({ decrypted });
+        } catch(err){
+          alert(`Error in decrypting key`);
+        }
+        await blind_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+      } else if (type === "Vikrey Auction") {
+        let marketListings = await this.props.vickrey_contract.methods.getallauctions().call({ from: this.props.account });
+        let key = marketListings[auction_id].H;
+        let cipher = EthCrypto.cipher.parse(key);
+        //decrypt using the private key offchain
+        let buyer_private_key = this.state.formData.pvtkey;
+        try{
+          let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          this.setState({ decrypted });
+        } catch(err){
+          alert(`Error in decrypting key`);
+        }
+        await vickrey_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+      } else {
+        let marketListings = await this.props.average_contract.methods.getallauctions().call({ from: this.props.account });
+        let key = marketListings[auction_id].H;
+        let cipher = EthCrypto.cipher.parse(key);
+        //decrypt using the private key offchain
+        let buyer_private_key = this.state.formData.pvtkey;
+        try{
+          let decrypted = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
+          this.setState({ decrypted });
+        } catch(err){
+          alert(`Error in decrypting key`);
+        }
+        await average_contract.methods.confirmDelivery(auction_id).send({ from: currentAccount });
+      }
 		} catch(error){
-			alert(`error`);
-		}
-	};
-
-	confirm = (auction_id) => async (e) => {
-    e.preventDefault();
-		const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-		try{
-			await this.state.market.methods.confirmDelivery(auction_id).send({ from: accounts[0] });
-			let cipher = EthCrypto.cipher.parse(this.props.stringvalue);
-			//decrypt using the private key offchain
-			let buyer_private_key = await getPrivateKey(this.state.currentAccount);
-			try{
-				let sent_item = await EthCrypto.decryptWithPrivateKey(buyer_private_key, cipher);
-			} catch(err){
-				alert(`Wrong key`);
-			}
-		} catch(error){
-			alert(`error`);
+			alert(`Error! Could not confirm.`);
 		}
 	};
 
   makeBid = (auction_id, type) => async (e) => {
     e.preventDefault();
-		const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-    const { value, secret_key, deposit } = this.state.formData;
+    const { value, secret_key, deposit, publickey } = this.state.formData;
     const { blind_contract, vickrey_contract, average_contract, currentAccount, web3 } = this.state
     this.setState({ makebid: !this.state.makebid });
     try {
-      if (type === "Blind Auction") {
+      if (type === "Normal Listing") {
+        await this.state.market.methods.requestBuy(auction_id,publickey)
+        .send({ 
+          from: currentAccount,
+          value: deposit
+        });
+      } else if (type === "Blind Auction") {
         await blind_contract.methods.bid(
           web3.utils.keccak256(
             web3.eth.abi.encodeParameters(
@@ -138,7 +160,8 @@ class AuctionHouse extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
+          parseInt(auction_id),
+          publickey
         ).send({
           from: currentAccount,
           value: deposit
@@ -151,8 +174,9 @@ class AuctionHouse extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
-        ).send({
+          parseInt(auction_id),
+          publickey
+          ).send({
           from: currentAccount,
           value: deposit
         });
@@ -164,16 +188,106 @@ class AuctionHouse extends Component {
               [value, secret_key]
             )
           ),
-          parseInt(auction_id)
+          parseInt(auction_id),
+          publickey
         ).send({
           from: currentAccount,
           value: deposit
         });
       }
+			// window.location.reload(false);
     } catch (error) {
-      alert(`Error: ${error}`);
+			alert(`Error: ${error.message}`);
     }
   }
+
+  revealBid = (auction_id, type) => async (e) => {
+    e.preventDefault();
+    const { value, secret_key } = this.state.formData;
+    const { blind_contract, vickrey_contract, average_contract, web3, currentAccount } = this.state
+    try {
+      if (type === "Blind Auction") {
+        await blind_contract.methods.reveal(
+          value,
+          secret_key,
+          parseInt(auction_id)
+        ).send({
+          from: currentAccount
+        });
+      } else if (type === "Vikrey Auction") {
+        await vickrey_contract.methods.reveal(
+          value,
+          secret_key,
+          parseInt(auction_id)
+        ).send({
+          from: currentAccount
+        });
+      } else {
+        await average_contract.methods.reveal(
+          value,
+          secret_key,
+          parseInt(auction_id)
+        ).send({
+          from: currentAccount
+        });
+      }
+			window.location.reload(false);
+    } catch (error) {
+			alert(`Error: ${error.message}`);
+    }
+  };
+
+  sellItem = (auction_id, type) => async (e) => {
+    try {
+      if (type === "Normal Listing") {
+        let marketListings = await this.state.market.methods.fetchalllistings().call({ from: this.state.currentAccount });
+        let pubkey = marketListings[auction_id].pubkey;
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let value = (marketListings[auction_id].price*2);
+        await this.state.market.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount,
+          value
+        });
+      }
+      else if (type === "Blind Auction") {
+        let marketListings = await this.state.blind_contract.methods.getallauctions().call({ from: this.state.currentAccount });
+        let pubkey = marketListings[auction_id].pubkey;
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let value = (marketListings[auction_id].finalBid*2);
+        await this.state.blind_contract.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount,
+          value
+        });
+        
+      } else if (type === "Vikrey Auction") {
+        let marketListings = await this.state.vickrey_contract.methods.getallauctions().call({ from: this.state.currentAccount });
+        let pubkey = marketListings[auction_id].pubkey;
+        let secret = await get_secret(pubkey, this.state.formData.unique_string);
+        let value = (marketListings[auction_id].finalBid*2);
+        await this.state.vickrey_contract.methods.sellItem(auction_id,secret)
+        .send({
+          from: this.state.currentAccount,
+          value
+        });
+       
+      } else {
+        let marketListings = await this.state.average_contract.methods.getallauctions().call({ from: this.state.currentAccount });
+        let pubkey = marketListings[auction_id].pubkey;
+        let secr = await get_secret(pubkey, this.state.formData.unique_string);
+        let value = (marketListings[auction_id].finalBid*2);
+        await this.state.average_contract.methods.sellItem(auction_id,secr)
+        .send({
+          from: this.state.currentAccount,
+          value
+        });
+        
+      }
+    } catch (error) {
+			alert(`Sell Item Error: ${error}`);
+    }
+	};
 
   endAuction = (auction_id, type) => async (e) => {
     e.preventDefault();
@@ -207,45 +321,7 @@ class AuctionHouse extends Component {
         });
       }
     } catch (error) {
-			alert(`Error: ${error}`);
-    }
-  };
-
-  revealBid = (auction_id, type) => async (e) => {
-    e.preventDefault();
-    const accounts = await this.state.web3.eth.getAccounts();
-    this.setState({ accounts, currentAccount: accounts[0] });
-		const { value, secret_key } = this.state.formData;
-    const { blind_contract, vickrey_contract, average_contract, web3, currentAccount } = this.state
-    try {
-      if (type === "Blind Auction") {
-        await blind_contract.methods.reveal(
-          value,
-          secret_key,
-          parseInt(auction_id)
-        ).send({
-          from: currentAccount
-        });
-      } else if (type === "Vikrey Auction") {
-        await vickrey_contract.methods.reveal(
-          value,
-          secret_key,
-          parseInt(auction_id)
-        ).send({
-          from: currentAccount
-        });
-      } else {
-        await average_contract.methods.reveal(
-          value,
-          secret_key,
-          parseInt(auction_id)
-        ).send({
-          from: currentAccount
-        });
-      }
-      window.location.reload(false);
-    } catch (error) {
-      alert(`Error: ${error.message}`);
+			alert(`End Auction Error: ${error.message}`);
     }
   };
 
@@ -282,15 +358,34 @@ class AuctionHouse extends Component {
 						<tbody>
 							{this.state.listings.map(listing => {
 								let status = 'Active'
-								let type = "Normal"
-								if(listing.type!="Normal Listing"){
-									type = "Not"
-								}
-                if(Date.now() > listing.bidding_deadline) {
-                  status = 'Bidding Over'
-                }
-                if (Date.now() > listing.reveal_deadline) {
-                  status = 'Reveal Time Over'
+                let type = 'Normal'
+                if (listing.type === "Normal Listing") {
+                  if (listing.buyer_alloted) {
+                    status = 'Requested'
+                  }
+                  if (listing.H) {
+                    status = 'Sold'
+                  }
+                  if (listing.sold_or_withdrawn) {
+                    status = 'Done'
+                  }
+                } else {
+                  type = 'Not'
+                  if (Date.now() > listing.bidding_deadline) {
+                    status = 'Bidding Over'
+                  }
+                  if (Date.now() > listing.reveal_deadline) {
+                    status = 'Reveal Over'
+                  }
+                  if (listing.ended) {
+                    status = 'Ended'
+                  }
+                  if (listing.H) {
+                    status = 'Sold'
+                  }
+                  if (listing.sold) {
+                    status = 'Done'
+                  }
                 }
                 return (
                   <tr key={listing.new_auction_id}>
@@ -303,53 +398,104 @@ class AuctionHouse extends Component {
                     <td>{listing.type!="Normal Listing" ? listing.reveal_deadline.toTimeString(): listing.reveal_deadline}</td>
                     <td>
                       {listing.beneficiary === this.state.currentAccount ?
+                      // Seller
 											(type === "Normal")?
-												(status === 'Ended')?
-													<p>Auction Ended Successfully. <br/> Buyer: {listing.buyer? listing.buyer: "None"} <br/> Selling Price: {listing.price}</p>
-													:
-													<>
-														<input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
-														<Button variant="success" onClick={this.sellItem(listing.auction_id)}>Sell Item</Button>
-													</>
-												:
-                        (status === 'Reveal Time Over') ?
-                          <Button onClick={this.endAuction(listing.new_auction_id, listing.type)} variant="danger">End Auction</Button>
-                          :
-                          <Button variant="outline-success" disabled>Active</Button>
+												(status === 'Active')?
+                        <Button variant="outline-success" disabled>Active</Button>
                         :
+												(status === 'Requested')?
+                        <>
+                          <p>Item requested. <br/> Buyer: {listing.buyer? listing.buyer: "None"} <br/> Selling Price: {listing.price}</p>
+                          <input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
+                          <Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
+                        </>
+                        :
+                        (status === 'Sold')?
+                        <>
+                        <Button variant="outline-info" disabled>Out for Delivery</Button>
+                        <p><br/> Buyer: {listing.buyer? listing.buyer: "None"} <br/> Selling Price: {listing.price}</p>
+                        </>
+												:
+                        <></>
+                        :
+                        // Auctions
+                        (status === 'Active') ?
+                        <Button variant="outline-success" disabled>Active</Button>
+                        :
+                        (status === 'Reveal Over') ?
+                        <Button onClick={this.endAuction(listing.auction_id, listing.type)} variant="danger">End Auction</Button>
+                        :
+                        (status === 'Ended')?
+                        <>
+                        <p>Auction Ended Successfully. <br/> Winner: {listing.winner? listing.winner: "None"} <br/> Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</p>
+                        <input type="string" className="form-control" id="unique_string" required onChange={this.handleChange} placeholder="Unique String" />
+                        <Button variant="success" onClick={this.sellItem(listing.auction_id, listing.type)}>Sell Item</Button>
+                        </>
+                        :
+                        (status === 'Sold')?
+                        <>
+                        <Button variant="outline-info" disabled>Out for Delivery</Button>
+                        </>
+												:
+                        <Button variant="outline-success" disabled>Delivered</Button>
+                        :
+                        // Buyer
 												(type === "Normal")?
+                          // Market
 													(status === 'Active') ?
-													<Button variant="primary" onClick={this.buyItem(listing.auction_id, listing.type)}>Buy</Button>
+                          <>
+                          <InputGroup>
+                              <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
+                              <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
+                            </InputGroup>
+                            <InputGroup>
+                              <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount (>2*Bid Amount)" />
+                              <input type="string" className="form-control" id="publickey" required onChange={this.handleChange} placeholder="Public Key" />
+                            </InputGroup>
+													<Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Buy Item</Button>
+                          </>
 													:
+                          // Requested to Buy
 													(status === 'Requested') ?
 													<Button variant="info" disabled>Requested to Buy</Button>
 													:
+                          // Sold by owner
 													(status === 'Sold') ?
-													<Button variant="primary" onClick={this.confirm(listing.auction_id)}>Confirm Checkout</Button>
+                          <>
+                            <InputGroup>
+                            <input type="password" className="form-control" id="pvtkey" required onChange={this.handleChange} placeholder="Private Key" />
+                            </InputGroup>
+                            <Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
+                            {this.state.decrypted &&
+                            <p>Decrypted string: {this.state.decrypted}</p>}
+                          </>
 													:
+                          // Delivered
 													<Button variant="outline-success" disabled>Delivered</Button>
 												:
+                        // Auctions
                         (status === 'Active') ?
                           <>
-                            {listing.bidplaced === true ?
-                              <div>
-                                <Button variant="info" disabled>Bid Already Placed</Button>
-                              </div>
-                              :
-                              <div>
-                                <InputGroup>
-                                  <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
-                                  <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
-                                  <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount" />
-                                </InputGroup>
-                                <Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
-                              </div>
-                            }
+                          {listing.bidplaced === true ?
+                            <Button variant="info" disabled>Bid Placed</Button>
+                            :
+                            <>
+                            <InputGroup>
+                              <input type="number" className="form-control" id="value" required onChange={this.handleChange} placeholder="Bid Amount" />
+                              <input type="password" className="form-control" id="secret_key" required onChange={this.handleChange} placeholder="Secret Key" />
+                            </InputGroup>
+                            <InputGroup>
+                              <input type="number" className="form-control" id="deposit" required onChange={this.handleChange} placeholder="Deposit Amount (>2*Bid Amount)" />
+                              <input type="string" className="form-control" id="publickey" required onChange={this.handleChange} placeholder="Public Key" />
+                            </InputGroup>
+                            <Button variant="primary" onClick={this.makeBid(listing.auction_id, listing.type)}>Place Bid</Button>
+                            </>
+                          }
                           </>
                           :
+                          // Bidding Time ended
                           (status === 'Bidding Over') ?
                             <>
-
                               {listing.bidplaced === true ?
                                 listing.revealed ?
                                   <Button variant="info" disabled>Revealed</Button>
@@ -366,10 +512,50 @@ class AuctionHouse extends Component {
                               }
                             </>
                             :
+                            // Auction reveal deadline
                             (status === 'Reveal Time Over') ?
-                              <Button variant="danger" disabled>Reveal Time Over. <br />Wait for auction end.</Button>
-                              :
-                              <> Wait for Auction End </>
+                            <Button variant="danger" disabled>Reveal Time Over. <br />Wait for auction end.</Button>
+                            :
+                            // Auction ended
+                            (status === 'Ended') ?
+                            <>
+                              {listing.winner === this.state.currentAccount ?
+                                <>
+                                <Button variant="success" disabled>Auction Won! <br/> 
+                                Bid Price: {listing.finalBid>0?listing.finalBid:"NA"} </Button>
+                                </>
+                                :
+                                <Button variant="info" disabled>Auction Ended. <br/>
+                                Won by: {listing.winner?listing.winner:"None"} <br/>
+                                Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</Button>
+                              }
+                            </>  
+                            :
+                            // Sold by owner
+                            (status === 'Sold') ?
+                            <>
+                              {listing.winner === this.state.currentAccount ?
+                                <>
+                                <Button variant="success" disabled>Auction Won! <br/> 
+                                Bid Price: {listing.finalBid>0?listing.finalBid:"NA"} </Button>
+                                <br/> 
+                                <InputGroup>
+                                <input type="password" className="form-control" id="pvtkey" required onChange={this.handleChange} placeholder="Private Key" />
+                                </InputGroup>
+                                <Button variant="primary" onClick={this.confirm(listing.auction_id, listing.type)}>Confirm Delivery</Button>
+                                </>
+                                :
+                                <Button variant="info" disabled>Auction Ended. <br/>
+                                Won by: {listing.winner?listing.winner:"None"} <br/>
+                                Winning Bid: {listing.finalBid>0?listing.finalBid:"NA"}</Button>
+                              }
+                            </>
+                            :
+                            // Delivered
+                            (status === 'Done') ?
+                            <Button variant="success" disabled>Delivered </Button>
+                            :
+                            <> Wait for Auction End </>
                       }
                     </td>
                   </tr>

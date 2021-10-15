@@ -98,6 +98,7 @@ contract BlindAuction {
         uint256 biddingEnd;
         uint256 revealEnd;
         bool ended;
+        bool sold;
         string item_name;
         string item_description;
         bool bidplaced;
@@ -443,6 +444,7 @@ contract BlindAuction {
                 currentauction.biddingEnd,
                 currentauction.revealEnd,
                 currentauction.ended,
+                currentauction.sold,
                 currentauction.item_name,
                 currentauction.item_description,
                 currentauction.bidded[msg.sender],
@@ -627,6 +629,7 @@ contract BlindAuction {
         auctionEnded(auction_id)
         onlyBeneficiary(auction_id)
     {
+        /// Check the security deposits
         require(
             msg.value == 2 * Auctions[auction_id].winningBid,
             "You have not paid right the security deposit"

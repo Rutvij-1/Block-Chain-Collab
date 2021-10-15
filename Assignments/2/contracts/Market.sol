@@ -261,7 +261,6 @@ contract Market {
         external
         payable
         ValidListing(auction_id)
-        /// ValidString(H)
         Validbeneficiary(auction_id)
         CheckState(auction_id)
     {
