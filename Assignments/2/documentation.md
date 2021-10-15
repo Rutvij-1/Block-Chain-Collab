@@ -115,13 +115,19 @@ At this point the Contract deposits 3 times the winning bid (the initial deposit
 
 #### Installation
 to install eth-crypto a webjs library to deal with encryption and decryption issues 
-    ''' 
+    ```
     npm install eth-crypto --save 
-    '''
+    ```
 #### Running the backend
 
-''' truffle console '''
-''' compile ''' 
-''' migrate '''
+```
+truffle console 
+```
+```
+compile
+``` 
+```
+migrate 
+```
 
 After that you can use the commands shown in the test files to play around .
