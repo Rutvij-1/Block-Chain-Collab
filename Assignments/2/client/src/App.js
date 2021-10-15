@@ -1,7 +1,9 @@
 import React, { Component } from "react";
-import { Spinner, Alert } from "react-bootstrap";
+import { Spinner } from "react-bootstrap";
 import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 import "./App.css";
+import 'react-s-alert/dist/s-alert-default.css';
+import 'react-s-alert/dist/s-alert-css-effects/slide.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import getWeb3 from "./getWeb3";
 import VikreyAuction from "./contracts/VikreyAuction.json";
@@ -15,6 +17,7 @@ import MyBids from "./components/myBids";
 import MyAuctions from "./components/myAuctions";
 import Dashboard from "./components/home";
 import AllEvents from "./components/allevents";
+import Alert from 'react-s-alert';
 
 class App extends Component {
   constructor(props) {
@@ -261,18 +264,18 @@ class App extends Component {
       <div className="App">
         <Router basename="/">
           <Navbr />
-          <Alert stack={{ limit: 10, spacing: 20 }} />
+          <Alert stack={{ limit: 10, spacing: 20 }} onClose={this.setShow} offset={100} />
           {this.state.error ?
-            <Alert variant="danger" onClose={() => this.setShow()} dismissible >{this.state.error}</Alert>
+            Alert.danger(`${this.state.error}`)
             : this.state.eventsuccess ?
               <>
                 {this.state.eventsuccess.map(event => {
                   return (
                     <>
                       {this.state.eventfails.includes(event) ?
-                        <Alert variant="danger" onClose={this.setShow} dismissible >{event}</Alert>
+                        Alert.danger(`${event}`)
                         :
-                        <Alert variant="success" onClose={this.setShow} dismissible >{event}</Alert>
+                        Alert.success(`${event}`)
                       }
                     </>
                   )
