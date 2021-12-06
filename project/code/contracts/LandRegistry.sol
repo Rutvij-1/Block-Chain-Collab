@@ -13,7 +13,7 @@ contract LandRegistry {
     ///@dev used to assign id to the newly registered properties
     uint256 current_property_id = 1;
     ///@dev used to assign id to the newly registered citizen nodes.
-    uint256 current_citizen_id = 1;
+    uint256 current_citizen_id = 1000001;
     ///@dev used to assign id to the newly registered validator nodes.
     uint256 current_validator_id = 1;
     ///@dev used to assign a id to a owner,property parir
@@ -160,7 +160,7 @@ contract LandRegistry {
     event ValidatorValidationRequest(uint256 validator_id);
 
     ///@dev this event is for when owner of the contract validates the validator
-    event ValidatorApproved(uint256 validator_id);
+    event ValidatorApproved(uint256 validator_id, uint256 role);
 
     ///@dev this event is for Seller to make Transaction Request
     event SellPropertyRequest(uint256 transaction_id,uint256 seller_id);
@@ -324,7 +324,7 @@ contract LandRegistry {
 
     ///@notice Used to make sure only unregistered person can register
     modifier Unregistered(){
-        require(roles[ids[msg.sender]] != 0,"Already Registered");
+        require(roles[ids[msg.sender]] == 0,"Already Registered");
         _;
     }
 
@@ -412,7 +412,7 @@ contract LandRegistry {
         RequestedValidator(validator_id){
             validators[validator_id].status = 1;
             roles[validator_id] = 4;
-            emit ValidatorApproved(validator_id);
+            emit ValidatorApproved(validator_id,roles[validator_id]);
 
 
     }
